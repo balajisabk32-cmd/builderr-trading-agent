@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-07-04T10:25:31Z",
+  "generated_at_utc": "2026-07-04T12:44:28Z",
   "as_of_market_date": "2026-07-02",
   "round_start": "2026-06-02",
   "scoring": "forward-only",
@@ -25,6 +25,16 @@
       "trades": 5,
       "days": 13,
       "since": "2026-06-12"
+    },
+    {
+      "name": "robert",
+      "label": "round 1 \u00b7 entrant",
+      "equity": 102387.5,
+      "pnl": 2387.5,
+      "ret": 0.0239,
+      "trades": 9,
+      "days": 9,
+      "since": "2026-06-20"
     },
     {
       "name": "meet",
@@ -513,16 +523,6 @@
       "trades": 24,
       "days": 20,
       "since": "2026-06-03"
-    },
-    {
-      "name": "robert",
-      "label": "round 1 \u00b7 entrant",
-      "equity": 91137.38,
-      "pnl": -8862.62,
-      "ret": -0.0886,
-      "trades": 39,
-      "days": 21,
-      "since": "2026-06-02"
     },
     {
       "name": "siddu",

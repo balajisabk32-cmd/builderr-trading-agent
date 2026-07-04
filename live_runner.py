@@ -128,7 +128,7 @@ ENTRY = {
     "QQQ": "2026-06-01",
     "drawdown-momentum": "2026-06-01", "dual-momentum-rotation": "2026-06-01",
     "ai-momentum-basket": "2026-06-01", "sector-rotation": "2026-06-01", "vol-target": "2026-06-01",
-    "opu": "2026-06-02", "robert": "2026-06-02", "mohit": "2026-06-03",
+    "opu": "2026-06-02", "robert": "2026-06-20", "mohit": "2026-06-03",
     "zaid": "2026-06-04", "sumegh": "2026-06-04", "shyam": "2026-06-06",
     "harsimran": "2026-06-19", "sankeerth": "2026-06-28", "siddu": "2026-06-07",
     "rohit": "2026-06-08", "eshwar": "2026-06-08", "arnav": "2026-06-09",
