@@ -49,6 +49,9 @@ UNIVERSE = _load_universe()
 # The live field — file -> (display name, label). House/reference bots set the
 # bar; real Round 1 entrants are labeled as such, never disguised as house bots.
 FIELD = [
+    # The market benchmark — buy & hold QQQ. The bar every strategy is trying to beat
+    # (like the RambleFix line on the speech-to-text board). Not a prize competitor.
+    ("qqq_benchmark.py",             "QQQ",                    "benchmark · the market (buy & hold)"),
     ("drawdown_momentum.py",         "drawdown-momentum",      "house · the bar to beat"),
     ("seed_dual_momentum.py",        "dual-momentum-rotation", "house · all-weather"),
     ("ai_momentum.py",               "ai-momentum-basket",     "house · aggressive"),
@@ -122,6 +125,7 @@ SCORE_START = "2026-06-18"   # legacy fallback only; per-bot ENTRY dates below a
 # "2026-06-01" = live since the Round 1 open (house/reference benchmarks).
 # Going forward: set this to the date the entry email arrived.
 ENTRY = {
+    "QQQ": "2026-06-01",
     "drawdown-momentum": "2026-06-01", "dual-momentum-rotation": "2026-06-01",
     "ai-momentum-basket": "2026-06-01", "sector-rotation": "2026-06-01", "vol-target": "2026-06-01",
     "opu": "2026-06-02", "robert": "2026-06-02", "mohit": "2026-06-03",
