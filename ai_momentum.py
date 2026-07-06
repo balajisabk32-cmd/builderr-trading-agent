@@ -38,7 +38,7 @@ _BASE = {
 # State across ticks (module-level globals persist within subprocess)
 _last_rebalance_tick = -10**9
 _tick_count = 0
-REBALANCE_EVERY_TICKS = 130  # ~weekly at 30-min ticks
+REBALANCE_EVERY_TICKS = 5    # decide() is called ONCE PER DAY (daily bars) -> 5 = weekly
 
 
 def _sma(values: list[float], n: int) -> float | None:

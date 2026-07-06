@@ -46,18 +46,22 @@ FAST_SMA = 50                # the primary risk-off switch — reacts fast enoug
 SLOW_SMA = 200               # cap a vol-spike drawdown; 200-day is the trend confirm
 MAX_W = 0.24                 # hard headroom under the 30% concentration cap
 CASH_FLOOR = 0.10            # never fully invested — the money-market instinct
-VOL_TARGET = 0.012           # ~1.2%/day SPY vol; above this we cut the growth sleeve
-VOL_CAP_MULT = 1.0           # vol scalar is clamped to [0.4, 1.0]
+VOL_TARGET = 0.010           # ~1.0%/day SPY vol; above this we cut the growth sleeve
+VOL_FLOOR = 0.25             # vol scalar clamp [0.25, 1.0] — a vol spike can cut the
+VOL_CAP_MULT = 1.0           # growth sleeve to 1/4 BEFORE the SMA gate even flips
 
 # Soham's book, expressed as ETFs in the challenge universe:
 GROWTH = ("SMH", "QQQ", "XLK", "XLV")   # semis + Nasdaq + tech + quality/health ballast
-HEDGE = ("GLD", "XLE", "GDX")           # gold + energy + gold miners = his real-asset ballast
+# Risk-off ballast = what actually holds up when tech rolls over: GOLD + a low-vol
+# defensive (utilities). NOT energy/miners — in Soham's book those are risk-ON cyclical
+# diversifiers that fall WITH the market in a broad spike, so they're a poor crash hedge.
+HEDGE = ("GLD", "XLU")
 
 # How much of equity to deploy in each regime (rest is cash). The hedge is sized
-# modestly because real assets can fall too — in risk-off, cash is still the biggest
-# position, exactly like the fund book.
+# modestly because even gold can wobble — in risk-off, CASH is still the biggest
+# position, exactly like the 42% money-market buffer in the fund book.
 RISK_ON_EXPOSURE = 0.90     # leaves the 10% cash floor
-RISK_OFF_HEDGE = 0.35       # a real-asset ballast, not an all-in bet
+RISK_OFF_HEDGE = 0.30       # a real-asset ballast, not an all-in bet — rest is cash
 
 
 def _closes(bars):
@@ -119,7 +123,7 @@ def _target_weights(market_state):
     spy_vol = _vol(spy, VOL_DAYS)
     scalar = VOL_CAP_MULT
     if spy_vol:
-        scalar = max(0.4, min(VOL_CAP_MULT, VOL_TARGET / spy_vol))
+        scalar = max(VOL_FLOOR, min(VOL_CAP_MULT, VOL_TARGET / spy_vol))
     return _inv_vol_weights(market_state, GROWTH, RISK_ON_EXPOSURE * scalar)
 
 

@@ -19,7 +19,7 @@ from statistics import mean
 
 _tick = 0
 _last_rebalance = -10**9
-REBALANCE_EVERY_TICKS = 130   # ~weekly at 30-min ticks
+REBALANCE_EVERY_TICKS = 5    # decide() is called ONCE PER DAY (daily bars) -> 5 = weekly
 DRIFT_LIMIT = 0.27
 MOMENTUM_DAYS = 60
 SMA_DAYS = 50

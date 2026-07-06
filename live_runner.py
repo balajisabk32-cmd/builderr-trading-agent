@@ -114,6 +114,8 @@ EVAL_DAYS = 60       # (history sizing only) trailing window used when fetching 
 WARMUP_DAYS = 220    # extra history so 200-day signals work
 START_CASH = 100_000.0
 ROUND_START = "2026-06-02"   # Round 1 admission opened
+ROUND_END = "2026-07-02"     # Round 1 CLOSE. Winners are frozen at this date; the board
+                             # must never score past it — post-close moves can't change ranks.
 # Fair scoring: entries for Round 1 closed after the last submission (2026-06-17), and
 # every agent is re-based to a fresh $100k here. The scored days are all AFTER the last
 # entry, so no one can optimise a bot against market history they had already seen.
@@ -128,7 +130,7 @@ ENTRY = {
     "QQQ": "2026-06-01",
     "drawdown-momentum": "2026-06-01", "dual-momentum-rotation": "2026-06-01",
     "ai-momentum-basket": "2026-06-01", "sector-rotation": "2026-06-01", "vol-target": "2026-06-01",
-    "opu": "2026-06-02", "robert": "2026-06-20", "mohit": "2026-06-03",
+    "opu": "2026-06-02", "robert": "2026-06-02", "mohit": "2026-06-03",
     "zaid": "2026-06-04", "sumegh": "2026-06-04", "shyam": "2026-06-06",
     "harsimran": "2026-06-19", "sankeerth": "2026-06-28", "siddu": "2026-06-07",
     "rohit": "2026-06-08", "eshwar": "2026-06-08", "arnav": "2026-06-09",
@@ -330,6 +332,9 @@ def _sharpe(curve):
 
 def main() -> int:
     bars = fetch_bars()
+    # Freeze at the round close: drop any bars after ROUND_END so post-close market
+    # moves can never change the final standings / winners.
+    bars = {t: [b for b in rows if str(b["ts"])[:10] <= ROUND_END] for t, rows in bars.items()}
     if len(bars) < 12:
         print(f"fetched only {len(bars)} tickers — refusing to overwrite leaderboard.json")
         return 1

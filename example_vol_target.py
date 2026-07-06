@@ -18,7 +18,7 @@ from statistics import mean, pstdev
 
 _tick = 0
 _last_rebalance = -10**9
-REBALANCE_EVERY_TICKS = 130
+REBALANCE_EVERY_TICKS = 5    # decide() is called ONCE PER DAY (daily bars) -> 5 = weekly
 DRIFT_LIMIT = 0.27
 VOL_DAYS = 20
 SMA_DAYS = 50
