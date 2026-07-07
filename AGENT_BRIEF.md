@@ -56,7 +56,7 @@ Tickers outside the universe are ignored.
 1. **Admission (instant, on submit).** A safety check, *not* a skill test. You're in if your bot
    runs cleanly, respects the caps, and doesn't blow up (>50% drawdown) across 3 hidden past
    market periods. You get a "robustness profile" (how it behaved) back by email.
-2. **Round 2 — the ranking (July 7 – August 7, 2026).** Your bot trades live on the shared
+2. **Round 2 — the ranking (July 7 – September 4, 2026).** Your bot trades live on the shared
    sandbox. Ranked by **forward return** over its live window. Arnav starts from the same Round 2
    opening window and is the benchmark to beat for the $1,000 prize pool and builder points.
 3. **Re-run.** Top finishers are re-run on market windows they never saw — to confirm skill, not luck.
@@ -94,7 +94,7 @@ Tickers outside the universe are ignored.
 
 ## Submit
 Implement `decide()` in `agent.py` → push to a GitHub repo (public, or private with a read-only
-deploy key) → email the link to **submit@builderr.ai**. Resubmit anytime during Round 2.
+deploy key) → email the link to **submit@builderr.ai**. You can revise up to 4 times before the Round 2 cutoff.
 
 ## If you win — know this going in
 Finish **top 3 among entries that beat Arnav** and your agent is shared with everyone who backed
