@@ -1,14 +1,125 @@
 {
-  "generated_at_utc": "2026-07-07T07:02:44Z",
-  "as_of_market_date": "2026-07-06",
+  "generated_at_utc": "2026-07-07T17:53:05Z",
+  "as_of_market_date": "2026-07-07",
   "round_start": "2026-07-07",
   "start_cash": 100000.0,
-  "dates": [],
+  "dates": [
+    "2026-07-07"
+  ],
   "market": {
     "label": "Nasdaq-100 (the market)",
-    "curve": []
+    "curve": [
+      99879.59
+    ]
   },
-  "featured": [],
-  "field": [],
+  "featured": [
+    {
+      "label": "Round 1 winner benchmark",
+      "curve": [
+        100248.69
+      ]
+    },
+    {
+      "label": "Nasdaq-100 market context",
+      "curve": [
+        99832.05
+      ]
+    }
+  ],
+  "field": [
+    [
+      100028.7
+    ],
+    [
+      100308.07
+    ],
+    [
+      99207.12
+    ],
+    [
+      99876.63
+    ],
+    [
+      100002.05
+    ],
+    [
+      100312.03
+    ],
+    [
+      100283.73
+    ],
+    [
+      99957.4
+    ],
+    [
+      99971.29
+    ],
+    [
+      99964.11
+    ],
+    [
+      100045.11
+    ],
+    [
+      99747.56
+    ],
+    [
+      99470.33
+    ],
+    [
+      99830.89
+    ],
+    [
+      100112.56
+    ],
+    [
+      100000.0
+    ],
+    [
+      100125.31
+    ],
+    [
+      99705.33
+    ],
+    [
+      99831.1
+    ],
+    [
+      99831.1
+    ],
+    [
+      99850.3
+    ],
+    [
+      100000.0
+    ],
+    [
+      99553.24
+    ],
+    [
+      99924.97
+    ],
+    [
+      99765.7
+    ],
+    [
+      99946.37
+    ],
+    [
+      99831.1
+    ],
+    [
+      100000.0
+    ],
+    [
+      99747.56
+    ],
+    [
+      99602.63
+    ],
+    [
+      100254.69
+    ]
+  ],
   "note": "Each line is a strategy's current version replayed over the round on real daily bars, no peeking at the future. Names are hidden on purpose; lines are grouped by trading style. The board is the snapshot; this is the time series behind it."
 }
