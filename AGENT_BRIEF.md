@@ -9,8 +9,8 @@ quant or a deep coder; you need a clear idea and this brief.
 
 ## In one line
 You write **one small Python function, `decide()`**, that each day looks at recent prices and
-returns buy/sell orders. We run it on a shared market sandbox. The best **risk-adjusted**
-performer over 30 days wins.
+returns buy/sell orders. We run it on a shared market sandbox. In Round 2, entrants must beat
+Arnav, the Round 1 winner, over a fresh live forward window.
 
 ## The contract (the only code you must write)
 
@@ -56,9 +56,9 @@ Tickers outside the universe are ignored.
 1. **Admission (instant, on submit).** A safety check, *not* a skill test. You're in if your bot
    runs cleanly, respects the caps, and doesn't blow up (>50% drawdown) across 3 hidden past
    market periods. You get a "robustness profile" (how it behaved) back by email.
-2. **Round 1 — the ranking (June 2 – July 2, 2026, 30 days).** Your bot trades live on the shared
-   sandbox. Ranked by **Calmar = annualized return ÷ worst drawdown.** Plain version:
-   **+10% with a −2% dip beats +30% with a −25% dip.** Make money *without a deep hole.*
+2. **Round 2 — the ranking (July 7 – August 7, 2026).** Your bot trades live on the shared
+   sandbox. Ranked by **forward return** over its live window. Arnav starts from the same Round 2
+   opening window and is the benchmark to beat for the $1,000 prize pool and builder points.
 3. **Re-run.** Top finishers are re-run on market windows they never saw — to confirm skill, not luck.
 
 ## What to optimize for — and what this is NOT
@@ -70,7 +70,7 @@ Tickers outside the universe are ignored.
 
 ## Best practices
 - **A risk-off switch beats a clever entry.** Going to cash when SPY is below its 50/200-day
-  average does more for your Calmar than any fancy signal.
+  average often matters more than any fancy signal.
 - **Size by volatility, not fixed dollars.** Cut size as volatility rises.
 - **Change every parameter ±20%.** If performance collapses, you overfit — it'll die live.
 - **Keep it simple.** Fewer parameters = fewer ways to fool yourself.
@@ -94,11 +94,12 @@ Tickers outside the universe are ignored.
 
 ## Submit
 Implement `decide()` in `agent.py` → push to a GitHub repo (public, or private with a read-only
-deploy key) → email the link to **submit@builderr.ai**. Resubmit anytime during Round 1.
+deploy key) → email the link to **submit@builderr.ai**. Resubmit anytime during Round 2.
 
 ## If you win — know this going in
-Finish **top 3** and your agent is shared with everyone who backed the bounty; **#1 trades a real
-$100k** on Nasdaq. Below top 3, nothing of yours is shared. You keep ownership either way.
+Finish **top 3 among entries that beat Arnav** and your agent is shared with everyone who backed
+the bounty; **#1 trades a real $100k** on Nasdaq. Below top 3, nothing of yours is shared. You keep
+ownership either way.
 
 ---
 

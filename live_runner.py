@@ -44,22 +44,21 @@ def _load_universe() -> list[str]:
             "AVGO", "AMD", "MU", "MRVL", "TQQQ", "SOXL", "QLD", "SSO"]
 
 
-UNIVERSE = _load_universe()
+ROUND2_FETCH_UNIVERSE = [
+    "SPY", "QQQ",
+    "NVDA", "MSFT", "AAPL", "META", "AMZN", "GOOGL", "AVGO", "AMD", "MU", "MRVL",
+    "NFLX", "TSLA", "PLTR", "ORCL", "CRM", "JPM", "V", "MA", "COST", "LLY",
+    "SMH", "XLK", "XLC", "XLY", "XLF", "XLI", "XLE", "XLV", "XLP", "XLU",
+    "XLRE", "DIA", "IWM", "SOXX", "QLD", "SSO",
+]
+FROZEN_UNIVERSE = set(_load_universe())
+UNIVERSE = [t for t in ROUND2_FETCH_UNIVERSE if t in FROZEN_UNIVERSE]
 
-# The live field — file -> (display name, label). House/reference bots set the
-# bar; real Round 1 entrants are labeled as such, never disguised as house bots.
+# The live field — file -> (display name, label). Round 2's benchmark is the
+# previous winner (Arnav), scored from the Round 2 open. QQQ remains as market
+# context only; the line to beat is Arnav.
 FIELD = [
-    # The market benchmark — buy & hold QQQ. The bar every strategy is trying to beat
-    # (like the RambleFix line on the speech-to-text board). Not a prize competitor.
-    ("qqq_benchmark.py",             "QQQ",                    "benchmark · the market (buy & hold)"),
-    ("drawdown_momentum.py",         "drawdown-momentum",      "house · the bar to beat"),
-    ("seed_dual_momentum.py",        "dual-momentum-rotation", "house · all-weather"),
-    ("ai_momentum.py",               "ai-momentum-basket",     "house · aggressive"),
-    ("example_sector_rotation.py",   "sector-rotation",        "reference"),
-    ("example_vol_target.py",        "vol-target",             "reference"),
-    # NOTE: entrant bots are NOT in FIELD. Entrant code must NEVER live in this PUBLIC
-    # repo. Every Round 1 entrant is scored from the gitignored private_agents/ dir via
-    # PRIVATE_FIELD below; only their NUMBERS (+ equity curve) are ever published.
+    ("qqq_benchmark.py",             "QQQ",                    "market context · QQQ buy & hold"),
 ]
 
 # Private entrants (read-only deploy-key path). Their CODE never enters this
@@ -69,88 +68,38 @@ FIELD = [
 PRIVATE_DIR = HERE / "private_agents"
 PRIVATE_RESULTS = HERE / "private_results.json"
 PRIVATE_FIELD = [
-    ("eshwar_agent.py",              "eshwar",                 "round 1 · entrant"),
-    # ALL Round 1 entrants live here: their code sits ONLY in gitignored private_agents/,
-    # never in this public repo. Scored locally; published via private_results.json
-    # (numbers + equity curve only, never code). The cron keeps them on the board with
-    # their last locally-scored result.
-    ("opu_agent.py",                 "opu",                    "round 1 · entrant"),
-    ("robert_agent.py",              "robert",                 "round 1 · entrant"),
-    ("mohit_agent.py",               "mohit",                  "round 1 · entrant"),
-    ("zaid_agent.py",                "zaid",                   "round 1 · entrant"),
-    ("sumegh_agent.py",              "sumegh",                 "round 1 · entrant"),
-    ("shyam_agent.py",               "shyam",                  "round 1 · entrant"),
-    ("harsimran_agent.py",           "harsimran",              "round 1 · entrant"),
-    ("sankeerth_agent.py",           "sankeerth",              "round 1 · entrant"),
-    ("siddu_agent.py",               "siddu",                  "round 1 · entrant"),
-    ("rohit_agent.py",               "rohit",                  "round 1 · entrant"),
-    ("arnav_agent.py",               "arnav",                  "round 1 · entrant"),
-    ("nagarjuna_agent.py",           "nagarjuna",              "round 1 · entrant"),
-    ("balaji_agent.py",              "balaji",                 "round 1 · entrant"),
-    ("ajai_agent.py",                "ajai",                   "round 1 · entrant"),
-    ("aksham_agent.py",              "aksham",                 "round 1 · entrant"),
-    ("darshan_agent.py",             "darshan",                "round 1 · entrant"),
-    ("tanishq_agent.py",             "tanishq",                "round 1 · entrant"),
-    ("aarya_agent.py",               "aarya",                  "round 1 · entrant"),
-    # yog + krunal submitted identical code — identical numbers until they iterate.
-    ("yog_agent.py",                 "yog",                    "round 1 · entrant"),
-    ("krunal_agent.py",              "krunal",                 "round 1 · entrant"),
-    # Rohan: optional external-LLM call is INERT in the eval; falls back to pure Python.
-    ("rohan_agent.py",               "rohan",                  "round 1 · entrant"),
-    ("dev_agent.py",                 "dev",                    "round 1 · entrant"),
-    ("deepika_agent.py",             "deepika",                "round 1 · entrant"),
-    ("om_agent.py",                  "om",                     "round 1 · entrant"),
-    ("raam_agent.py",                "raam",                   "round 1 · entrant"),
-    ("navika_agent.py",              "navika",                 "round 1 · entrant"),
-    ("yuva_agent.py",                "yuva",                   "round 1 · entrant"),
-    ("shivkumar_agent.py",           "shivkumar",              "round 1 · entrant"),
-    ("sham_agent.py",                "sham",                   "round 1 · entrant"),
-    ("rishchith_agent.py",           "rishchith",              "round 1 · entrant"),
-    ("meet_agent.py",                "meet",                   "round 1 · entrant"),
-    ("vishwas_agent.py",             "vishwas",                "round 1 · entrant"),
+    ("arnav_agent.py",               "arnav",                  "benchmark · Round 1 winner"),
+    # Add Round 2 entrants here as they arrive, labeled "round 2 · entrant".
+    # Entrant code stays gitignored in private_agents/; only numbers are published.
 ]
 
 EVAL_DAYS = 60       # (history sizing only) trailing window used when fetching bars
 WARMUP_DAYS = 220    # extra history so 200-day signals work
 START_CASH = 100_000.0
-ROUND_START = "2026-06-02"   # Round 1 admission opened
+ROUND_ID = "trading-v0-round-2"
+ROUND_NAME = "Round 2"
+ROUND_START = "2026-07-07"   # Round 2 starts at the Jul 7, 2026 US market open.
 ROUND_STATUS = "live"        # Current board: refresh against the latest fetched market bars.
-# Fair scoring: entries for Round 1 closed after the last submission (2026-06-17), and
-# every agent is re-based to a fresh $100k here. The scored days are all AFTER the last
-# entry, so no one can optimise a bot against market history they had already seen.
-SCORE_START = "2026-06-18"   # legacy fallback only; per-bot ENTRY dates below are authoritative
+PRIZE_POOL_USD = 1_000
+SCORE_START = ROUND_START    # legacy fallback only; per-bot ENTRY dates below are authoritative
 
 # Per-agent submission date (the email/commit date). A bot is scored ONLY from the
 # first market session AFTER this date — forward-only — so no one can optimise against
 # market history they had already seen, and submitting later gives zero edge.
-# "2026-06-01" = live since the Round 1 open (house/reference benchmarks).
+# "2026-07-07" = live since the Round 2 open.
 # Going forward: set this to the date the entry email arrived.
 ENTRY = {
-    "QQQ": "2026-06-01",
-    "drawdown-momentum": "2026-06-01", "dual-momentum-rotation": "2026-06-01",
-    "ai-momentum-basket": "2026-06-01", "sector-rotation": "2026-06-01", "vol-target": "2026-06-01",
-    "opu": "2026-06-02", "robert": "2026-06-20", "mohit": "2026-06-03",
-    "zaid": "2026-06-04", "sumegh": "2026-06-04", "shyam": "2026-06-06",
-    "harsimran": "2026-06-19", "sankeerth": "2026-06-28", "siddu": "2026-06-07",
-    "rohit": "2026-06-08", "eshwar": "2026-06-08", "arnav": "2026-06-09",
-    "nagarjuna": "2026-06-09", "balaji": "2026-06-10", "ajai": "2026-06-25",
-    "aksham": "2026-06-11", "darshan": "2026-06-19", "tanishq": "2026-06-11",
-    "aarya": "2026-06-12", "yog": "2026-06-13", "krunal": "2026-06-13",
-    "rohan": "2026-06-15", "dev": "2026-06-19", "deepika": "2026-06-15",
-    "om": "2026-06-17", "raam": "2026-06-17",
-    "navika": "2026-06-18", "yuva": "2026-06-18", "shivkumar": "2026-06-17",
-    "sham": "2026-06-24", "rishchith": "2026-06-28", "meet": "2026-06-24", "vishwas": "2026-06-27",
+    "QQQ": ROUND_START,
+    "arnav": ROUND_START,
 }
-CHART_START = "2026-06-01"   # common x-axis for the illustrative race chart (Round 1 open)
+CHART_START = ROUND_START    # common x-axis for the illustrative race chart (Round 2 open)
 SLIP_EQUITY = 0.0005
 SLIP_LEVERAGED = 0.0010
 BETA_3X = {"TQQQ", "SOXL", "UPRO", "SPXL", "TNA", "FAS", "TECL", "LABU", "CURE", "DRN", "UDOW", "NAIL"}
 BETA_2X = {"QLD", "SSO", "DDM", "ROM", "UWM", "AGQ"}
-PRIZE_SPLIT = [
-    ("arnav", "$1,200", 100),
-    ("aarya", "$500", 60),
-    ("robert", "$300", 35),
-]
+PRIZE_SPLIT = ["$600", "$250", "$150"]
+POINTS_TABLE = [30, 20, 15, 10, 8, 6, 4, 3, 2, 2]  # max 100 builder points per challenge
+BENCHMARK_NAME = "arnav"
 
 
 def beta(t: str) -> float:
@@ -192,7 +141,36 @@ def _rows_from_df(df, need):
     return rows[-need:] if len(rows) >= need - 60 else None  # tolerate short histories
 
 
-CHUNK = 200  # tickers per batched yfinance call (1000-name universe → ~5 calls)
+def _intraday_bar_from_df(df):
+    cols = {str(c).lower(): c for c in df.columns}
+    if not {"open", "high", "low", "close"} <= set(cols):
+        return None
+    rows = []
+    for ts, r in df.iterrows():
+        try:
+            o, h, l, c = float(r[cols["open"]]), float(r[cols["high"]]), float(r[cols["low"]]), float(r[cols["close"]])
+            vv = r[cols["volume"]] if "volume" in cols else 0
+            v = int(vv) if vv == vv else 0
+        except (KeyError, ValueError, TypeError):
+            continue
+        if any(x != x for x in (o, h, l, c)):
+            continue
+        rows.append({"ts": ts.strftime("%Y-%m-%d"), "open": o, "high": h, "low": l, "close": c, "volume": v})
+    if not rows:
+        return None
+    day = rows[-1]["ts"]
+    day_rows = [r for r in rows if r["ts"] == day]
+    return {
+        "ts": day,
+        "open": day_rows[0]["open"],
+        "high": max(r["high"] for r in day_rows),
+        "low": min(r["low"] for r in day_rows),
+        "close": day_rows[-1]["close"],
+        "volume": sum(r["volume"] for r in day_rows),
+    }
+
+
+CHUNK = 80  # bounded yfinance batches; large multi-ticker calls can stall
 
 
 def fetch_bars() -> dict[str, list[dict]]:
@@ -204,7 +182,7 @@ def fetch_bars() -> dict[str, list[dict]]:
         chunk = UNIVERSE[i:i + CHUNK]
         try:
             raw = yf.download(chunk, period="2y", interval="1d", auto_adjust=True,
-                              progress=False, threads=True, group_by="ticker")
+                              progress=False, threads=16, group_by="ticker", timeout=8)
         except Exception:  # noqa: BLE001
             continue
         if raw is None or getattr(raw, "empty", True):
@@ -220,6 +198,32 @@ def fetch_bars() -> dict[str, list[dict]]:
             r = _rows_from_df(df, need)
             if r:
                 bars[t] = r
+    # During market hours Yahoo's 1d feed may lag at the prior close. Roll the
+    # current 1-minute session into a synthetic daily bar so Round 2 marks from
+    # today's open to the latest traded price.
+    try:
+        raw = yf.download(UNIVERSE, period="1d", interval="1m", auto_adjust=True,
+                          progress=False, threads=16, group_by="ticker", timeout=8)
+    except Exception:  # noqa: BLE001
+        raw = None
+    if raw is not None and not getattr(raw, "empty", True):
+        multi = hasattr(raw.columns, "nlevels") and raw.columns.nlevels > 1
+        for t in UNIVERSE:
+            try:
+                df = raw[t] if multi else raw
+            except KeyError:
+                continue
+            if df is None or df.empty:
+                continue
+            b = _intraday_bar_from_df(df)
+            if not b:
+                continue
+            current = bars.get(t, [])
+            if current and current[-1]["ts"] == b["ts"]:
+                current[-1] = b
+            elif not current or current[-1]["ts"] < b["ts"]:
+                current.append(b)
+            bars[t] = current
     return bars
 
 
@@ -233,7 +237,7 @@ def run_bot(decide, bars: dict[str, list[dict]], entry_date: str = SCORE_START) 
     the day's move.
     """
     all_dates = sorted({b["ts"] for rows in bars.values() for b in rows})
-    eval_dates = [d for d in all_dates if d > entry_date] or all_dates[-1:]
+    eval_dates = [d for d in all_dates if d > entry_date]
     cash = START_CASH
     positions: dict[str, float] = {}
     avg_cost: dict[str, float] = {}
@@ -250,9 +254,9 @@ def run_bot(decide, bars: dict[str, list[dict]], entry_date: str = SCORE_START) 
         open_px = {t: p for t in bars if (p := price(t, date, "open")) is not None}
         close_px = {t: p for t in bars if (p := price(t, date, "close")) is not None}
 
-        # The contest launched the night BEFORE June 2's open, so the book is set
-        # on info known through the prior close, and orders execute at THIS day's
-        # OPEN — i.e. the agent actually holds through (and captures) the session.
+        # The book is set on info known through the prior close, and orders execute
+        # at THIS day's OPEN — i.e. the agent actually holds through, and captures,
+        # the session.
         market_state = {t: [b for b in bars[t] if b["ts"] < date] for t in bars}
         prior_close = {t: ms[-1]["close"] for t, ms in market_state.items() if ms}
         portfolio_state = {
@@ -369,6 +373,8 @@ def main() -> int:
             saved = json.loads(PRIVATE_RESULTS.read_text()) or {}
         except Exception:  # noqa: BLE001
             saved = {}
+    active_private_names = {name for _, name, _ in PRIVATE_FIELD}
+    saved = {name: rec for name, rec in saved.items() if name in active_private_names}
     for filename, name, label in PRIVATE_FIELD:
         entry = ENTRY.get(name, SCORE_START)
         p = PRIVATE_DIR / filename
@@ -394,31 +400,64 @@ def main() -> int:
         PRIVATE_RESULTS.write_text(json.dumps(saved, indent=2))
 
     rows.sort(key=lambda r: r["ret"], reverse=True)
+    rows_by_name = {r["name"]: r for r in rows}
+    benchmark = rows_by_name.get(BENCHMARK_NAME)
+    benchmark_ret = benchmark.get("ret", 0.0) if benchmark else 0.0
     entrants = [r for r in rows if "entrant" in (r.get("label") or "").lower()]
+    qualified = [r for r in entrants if r.get("ret", -1e9) > benchmark_ret]
     prize_positions = []
-    for rank, (row, (_, prize, points)) in enumerate(zip(entrants, PRIZE_SPLIT), 1):
+    for rank, (row, prize) in enumerate(zip(qualified, PRIZE_SPLIT), 1):
         prize_positions.append({
             "rank": rank,
             "name": row["name"],
             "ret": row.get("ret"),
             "prize": prize,
+        })
+    points_positions = []
+    for rank, (row, points) in enumerate(zip(qualified, POINTS_TABLE), 1):
+        points_positions.append({
+            "rank": rank,
+            "name": row["name"],
+            "ret": row.get("ret"),
             "points": points,
         })
     payload = {
         "generated_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "as_of_market_date": asof,
+        "round_id": ROUND_ID,
+        "round_name": ROUND_NAME,
         "round_start": ROUND_START,
         "scoring": "forward-only",
         "start_cash": START_CASH,
         "round_status": ROUND_STATUS,
-        "prize_positions": prize_positions,
-        "profile_points_model": {
-            "status": "beta",
-            "description": "Round-level challenge points for future builder profiles. Prize positions earn 100/60/35 points when a round closes; benchmark challenges can award points to every entrant who clears the published bar.",
-            "top_3_points": [100, 60, 35],
-            "benchmark_points": "challenge-specific; awarded when an entrant meets or beats the published benchmark",
+        "prize_pool_usd": PRIZE_POOL_USD,
+        "prize_split": {
+            "first": PRIZE_SPLIT[0],
+            "second": PRIZE_SPLIT[1],
+            "third": PRIZE_SPLIT[2],
         },
-        "note": "Live Round 1 — standings refresh from the latest fetched market bars. Prize positions are entrant-only; benchmark, house, and reference rows stay visible as baselines. Each agent starts a $100,000 paper account at the first market open AFTER it was submitted, and is scored only from there — so no one can optimise against market history they had already seen, and submitting later gives no edge. 'days' is each bot's live window so far. Same data and fills for everyone. The winner is the best return over its live window — admission caps how much of the $100k goes into the market at once and into any single stock, and the live window includes real market moves, so return over it is a genuine test, not a lucky calm run.",
+        "benchmark": {
+            "name": BENCHMARK_NAME,
+            "label": "Round 1 winner",
+            "rule": "Round 2 prize and builder points require beating Arnav's Round 2 forward return.",
+            "ret": benchmark_ret,
+        },
+        "prize_positions": prize_positions,
+        "points_positions": points_positions,
+        "builder_points_model": {
+            "status": "active",
+            "max_points_per_challenge": 100,
+            "qualifier_rule": "Only entrants who beat the published benchmark qualify for points.",
+            "top_10_points": POINTS_TABLE,
+            "unused_points": "Unused points are not awarded if fewer than 10 entrants beat the benchmark.",
+        },
+        "profile_points_model": {
+            "status": "active",
+            "description": "Each challenge can award at most 100 builder points. For benchmark rounds, only entries that beat the benchmark qualify; top 10 qualifiers receive 30/20/15/10/8/6/4/3/2/2 points.",
+            "top_10_points": POINTS_TABLE,
+            "benchmark_points": f"Beat {BENCHMARK_NAME}, the prior round winner, over the Round 2 forward window.",
+        },
+        "note": "Live Round 2 — standings refresh from the latest fetched market bars. Arnav, the Round 1 winner, is the published benchmark. Prize positions and builder points are entrant-only and only unlock for entries that beat Arnav over the Round 2 forward window. Each agent starts a $100,000 paper account at the first market open AFTER it was submitted, and is scored only from there — so no one can optimise against market history they had already seen, and submitting later gives no edge. 'days' is each bot's live window so far. Same data and fills for everyone.",
         "bots": rows,
     }
     OUT.write_text(json.dumps(payload, indent=2))
@@ -442,10 +481,8 @@ def main() -> int:
                 last = round(START_CASH * qbars[d]["close"] / base, 2)
             market.append(last)
     FEATURED = [  # one clean representative per archetype — names hidden, plain-English style
-        ("sumegh",                 "All-in on AI & chips"),
-        ("mohit",                  "Aggressive, amplified bet"),
-        ("dual-momentum-rotation", "Spread across the market"),
-        ("sankeerth",              "Defensive, sells fast on drops"),
+        ("arnav", "Round 1 winner benchmark"),
+        ("QQQ",   "Nasdaq-100 market context"),
     ]
     feat_names = {n for n, _ in FEATURED}
     featured = [{"label": lbl, "curve": curves[n]} for n, lbl in FEATURED if curves.get(n)]

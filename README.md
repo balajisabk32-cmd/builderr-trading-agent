@@ -26,9 +26,9 @@ Fork this repo, implement `decide()` in `agent.py`, then send us the repo — **
 
 > **Secrets:** never commit API keys. You do not need an LLM, brokerage login, or real-money account to enter. If you use an LLM, use endpoint mode or a capped throwaway key.
 
-## Submitted agent: Calmar Rotation Hybrid
+## Submitted agent: Forward-Return Rotation Hybrid
 
-`agent.py` is a no-network, no-LLM strategy built for the live Calmar ranking (Round 1: June 2 – July 2, 2026):
+`agent.py` is a no-network, no-LLM strategy built for the live forward-return ranking (Round 2: July 7 – August 7, 2026):
 
 - **Risk regime:** risk-on only when SPY and QQQ are above their 50-day SMAs and QQQ 20-day volatility is below 35%.
 - **Risk-off book:** XLP / XLU / XLV / XLE with cash left over; no leverage.
@@ -56,7 +56,7 @@ def decide(market_state, portfolio_state, cash) -> list[dict]:
 | `cash` | Convenience copy of `portfolio_state["cash"]`. |
 | **return** | List of orders. Each: `{ticker, side: "buy"\|"sell", quantity: float}`. Empty list = no action. |
 
-`decide()` is called once per decision interval (daily-resolution in admission; finer in Phase B live).
+`decide()` is called once per decision interval (daily-resolution in admission and the live board).
 
 ---
 
@@ -76,12 +76,12 @@ def decide(market_state, portfolio_state, cash) -> list[dict]:
 
 **Your agent has open network access.** Hit any external API: news feeds, alt-data vendors, social sentiment, your own server, an LLM. Real trading bots use external signals; we don't pretend otherwise.
 
-**One absolute rule: no lookahead bias.** Phase A runs in 2026 against historical regimes (2022–2024). At submission time, "live" APIs return present-day data, which for a 2023 backtest *is the future*. If your strategy queries data sources for the regime period at submission time and benefits from knowing what happened, you have lookahead bias.
+**One absolute rule: no lookahead bias.** Admission runs in 2026 against historical regimes (2022–2024). At submission time, "live" APIs return present-day data, which for a 2023 backtest *is the future*. If your strategy queries data sources for the regime period at submission time and benefits from knowing what happened, you have lookahead bias.
 
 How we catch it:
-1. **Top-10 Phase A submissions get a 10-min human code read.** Patterns like `requests.get("yahoo/SPY/2023-*")` inside the live backtest = DQ. Public postmortem on caught cases.
-2. **Phase A ↔ Phase B correlation check.** If your Phase A Sharpe is 6 and your Phase B Sharpe over a comparable horizon is -1, you get flagged for review. Lookahead cheaters leave that signature every time.
-3. **Surprise fresh-regime reruns.** During Phase B we re-run qualified agents against new hidden 30-day windows that post-date any internet snapshot you could have queried. Inconsistency = lookahead suspicion.
+1. **Top admission submissions get a 10-min human code read.** Patterns like `requests.get("yahoo/SPY/2023-*")` inside the live backtest = DQ. Public postmortem on caught cases.
+2. **Admission ↔ live correlation check.** If your admission Sharpe is 6 and your live Sharpe over a comparable horizon is -1, you get flagged for review. Lookahead cheaters leave that signature every time.
+3. **Surprise fresh-regime reruns.** During the live round we can re-run qualified agents against new hidden 30-day windows that post-date any internet snapshot you could have queried. Inconsistency = lookahead suspicion.
 
 If you're not sure whether your data source is OK: ask in GitHub Discussions before submitting. If your strategy is genuinely signal-driven (technicals, fundamentals available at the regime time, your own models), you're fine.
 
@@ -122,19 +122,19 @@ That's it. A fair-weather strategy that's soft in a crash is *admitted* — skil
 
 ### Stage 2 — Live forward test — the ranking
 
-**Round 1 runs June 2 – July 2, 2026 (30 days).** Admitted agents run live on the shared paper sandbox over the window. Same fills for everyone. Daily leaderboard. **Ranked by Calmar** (annualized return / max drawdown). This is the competition. Submissions are open now — the earlier you're admitted, the more of the window your bot trades.
+**Round 2 runs July 7 – August 7, 2026.** Admitted agents run live on the shared paper sandbox over the window. Same fills for everyone. Daily leaderboard. **Ranked by forward return**, with Arnav (the Round 1 winner) as the benchmark to beat for prize money and builder points. Submissions are open now — the earlier you're admitted, the more of the window your bot trades.
 
 ### Stage 3 — Held-out rerun — the anti-luck check
 
 Top finishers are re-run on **fresh windows (calm + stress) they've never seen**. Luck doesn't replicate; skill does. This confirms the winner isn't just the luckiest of the field.
 
-**Prize:** Top 3 by Phase B Calmar (surviving the rerun) split **$2,000** ($1200 / $500 / $300). Top 5 get a LinkedIn spotlight. Winner's code runs on a real **$100k Nasdaq book** post-challenge, with weekly P&L posted publicly on a live ticker from week one — *"win and your code trades my real money."*
+**Prize:** Top 3 entrants who beat Arnav split **$1,000** ($600 / $250 / $150). Qualified entries can also earn builder points from the 100-point challenge pool (30 / 20 / 15 / 10 / 8 / 6 / 4 / 3 / 2 / 2 for the top 10 qualifiers). Winner's code runs on a real **$100k Nasdaq book** post-challenge, with weekly P&L posted publicly on a live ticker from week one — *"win and your code trades my real money."*
 
 ---
 
 ## Submission
 
-You don't have to make your code public. Pick the path you're comfortable with — same competition, same scoring, regardless. All three: email the link to **submit@builderr.ai** (subject: `builderr submission — <your name>`); we run admission and email your robustness profile the same day (usually within a few hours); if admitted you're in the live round (Round 1: June 2 – July 2).
+You don't have to make your code public. Pick the path you're comfortable with — same competition, same scoring, regardless. All three: email the link to **submit@builderr.ai** (subject: `builderr submission — <your name>`); we run admission and email your robustness profile the same day (usually within a few hours); if admitted you're in the live round (Round 2: July 7 – August 7).
 
 **1. Public repo** *(simplest)*
 Push to a public GitHub repo, email the URL. Zero access setup and you get a public proof-of-work piece — but the field can read your strategy while the contest runs, and a public repo is the easiest place to leak a key. Good if you don't mind being open (or you'll open it after the contest anyway).

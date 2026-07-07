@@ -7,7 +7,7 @@ name: live-leaderboard
 on:
   schedule:
     # Every 2h while the US market is open: 14/16/18/20 UTC = ~10:00 ET through the
-    # 16:00 ET (20:00 UTC) close, Mon–Fri. Set for EDT (the Round 1 window). No runs after close.
+    # 16:00 ET (20:00 UTC) close, Mon–Fri. Set for EDT (the Round 2 window). No runs after close.
     - cron: "0 14,16,18,20 * * 1-5"
   workflow_dispatch:
 
