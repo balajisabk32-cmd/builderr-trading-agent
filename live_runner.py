@@ -114,8 +114,7 @@ EVAL_DAYS = 60       # (history sizing only) trailing window used when fetching 
 WARMUP_DAYS = 220    # extra history so 200-day signals work
 START_CASH = 100_000.0
 ROUND_START = "2026-06-02"   # Round 1 admission opened
-ROUND_END = "2026-07-02"     # Round 1 CLOSE. Winners are frozen at this date; the board
-                             # must never score past it — post-close moves can't change ranks.
+ROUND_STATUS = "live"        # Current board: refresh against the latest fetched market bars.
 # Fair scoring: entries for Round 1 closed after the last submission (2026-06-17), and
 # every agent is re-based to a fresh $100k here. The scored days are all AFTER the last
 # entry, so no one can optimise a bot against market history they had already seen.
@@ -130,7 +129,7 @@ ENTRY = {
     "QQQ": "2026-06-01",
     "drawdown-momentum": "2026-06-01", "dual-momentum-rotation": "2026-06-01",
     "ai-momentum-basket": "2026-06-01", "sector-rotation": "2026-06-01", "vol-target": "2026-06-01",
-    "opu": "2026-06-02", "robert": "2026-06-02", "mohit": "2026-06-03",
+    "opu": "2026-06-02", "robert": "2026-06-20", "mohit": "2026-06-03",
     "zaid": "2026-06-04", "sumegh": "2026-06-04", "shyam": "2026-06-06",
     "harsimran": "2026-06-19", "sankeerth": "2026-06-28", "siddu": "2026-06-07",
     "rohit": "2026-06-08", "eshwar": "2026-06-08", "arnav": "2026-06-09",
@@ -147,6 +146,11 @@ SLIP_EQUITY = 0.0005
 SLIP_LEVERAGED = 0.0010
 BETA_3X = {"TQQQ", "SOXL", "UPRO", "SPXL", "TNA", "FAS", "TECL", "LABU", "CURE", "DRN", "UDOW", "NAIL"}
 BETA_2X = {"QLD", "SSO", "DDM", "ROM", "UWM", "AGQ"}
+PRIZE_SPLIT = [
+    ("arnav", "$1,200", 100),
+    ("aarya", "$500", 60),
+    ("robert", "$300", 35),
+]
 
 
 def beta(t: str) -> float:
@@ -332,9 +336,6 @@ def _sharpe(curve):
 
 def main() -> int:
     bars = fetch_bars()
-    # Freeze at the round close: drop any bars after ROUND_END so post-close market
-    # moves can never change the final standings / winners.
-    bars = {t: [b for b in rows if str(b["ts"])[:10] <= ROUND_END] for t, rows in bars.items()}
     if len(bars) < 12:
         print(f"fetched only {len(bars)} tickers — refusing to overwrite leaderboard.json")
         return 1
@@ -393,13 +394,31 @@ def main() -> int:
         PRIVATE_RESULTS.write_text(json.dumps(saved, indent=2))
 
     rows.sort(key=lambda r: r["ret"], reverse=True)
+    entrants = [r for r in rows if "entrant" in (r.get("label") or "").lower()]
+    prize_positions = []
+    for rank, (row, (_, prize, points)) in enumerate(zip(entrants, PRIZE_SPLIT), 1):
+        prize_positions.append({
+            "rank": rank,
+            "name": row["name"],
+            "ret": row.get("ret"),
+            "prize": prize,
+            "points": points,
+        })
     payload = {
         "generated_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "as_of_market_date": asof,
         "round_start": ROUND_START,
         "scoring": "forward-only",
         "start_cash": START_CASH,
-        "note": "Live Round 1 — forward-only scoring. Each agent starts a $100,000 paper account at the first market open AFTER it was submitted, and is scored only from there — so no one can optimise against market history they had already seen, and submitting later gives no edge. 'days' is each bot's live window so far. Same data and fills for everyone, refreshed each market day. The winner is the best return over its live window — admission already screens out the reckless bots (it caps how much of the $100k goes into the market at once and into any single stock), and the live window includes real market moves, so return over it is a genuine test, not a lucky calm run. There is no historical re-run, because in trading all past data is public and fittable, so the forward window is the only real out-of-sample test. Submissions close ~3 days before the round ends, so every bot gets a minimum live window.",
+        "round_status": ROUND_STATUS,
+        "prize_positions": prize_positions,
+        "profile_points_model": {
+            "status": "beta",
+            "description": "Round-level challenge points for future builder profiles. Prize positions earn 100/60/35 points when a round closes; benchmark challenges can award points to every entrant who clears the published bar.",
+            "top_3_points": [100, 60, 35],
+            "benchmark_points": "challenge-specific; awarded when an entrant meets or beats the published benchmark",
+        },
+        "note": "Live Round 1 — standings refresh from the latest fetched market bars. Prize positions are entrant-only; benchmark, house, and reference rows stay visible as baselines. Each agent starts a $100,000 paper account at the first market open AFTER it was submitted, and is scored only from there — so no one can optimise against market history they had already seen, and submitting later gives no edge. 'days' is each bot's live window so far. Same data and fills for everyone. The winner is the best return over its live window — admission caps how much of the $100k goes into the market at once and into any single stock, and the live window includes real market moves, so return over it is a genuine test, not a lucky calm run.",
         "bots": rows,
     }
     OUT.write_text(json.dumps(payload, indent=2))
