@@ -101,6 +101,7 @@ PRIVATE_FIELD = [
     ("shivkumar_agent.py",           "shivkumar",              "round 2 · entrant"),
     ("sham_agent.py",                "sham",                   "round 2 · entrant"),
     ("rishchith_agent.py",           "rishchith",              "round 2 · entrant"),
+    ("meet_agent.py",                "meet",                   "round 2 · entrant"),
     ("vishwas_agent.py",             "vishwas",                "round 2 · entrant"),
 ]
 
@@ -134,7 +135,7 @@ ENTRY = {
     "rohit": ROUND_START,
     "nagarjuna": ROUND_START,
     "balaji": ROUND_START,
-    "ajai": ROUND_START,
+    "ajai": "2026-07-09",
     "aksham": ROUND_START,
     "darshan": ROUND_START,
     "tanishq": ROUND_START,
@@ -149,8 +150,9 @@ ENTRY = {
     "navika": ROUND_START,
     "yuva": ROUND_START,
     "shivkumar": ROUND_START,
-    "sham": ROUND_START,
-    "rishchith": ROUND_START,
+    "sham": "2026-07-08",
+    "rishchith": "2026-07-08",
+    "meet": "2026-07-09",
     "vishwas": ROUND_START,
 }
 CHART_START = ROUND_START    # common x-axis for the illustrative race chart (Round 2 open)
