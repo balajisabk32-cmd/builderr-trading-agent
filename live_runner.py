@@ -152,7 +152,7 @@ ENTRY = {
     "shivkumar": ROUND_START,
     "sham": "2026-07-08",
     "rishchith": "2026-07-08",
-    "meet": "2026-07-09",
+    "meet": "2026-07-10",
     "vishwas": ROUND_START,
 }
 CHART_START = ROUND_START    # common x-axis for the illustrative race chart (Round 2 open)
