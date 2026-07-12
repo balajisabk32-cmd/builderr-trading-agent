@@ -55,9 +55,16 @@ def test_future_entry_does_not_backfill() -> None:
     assert result["equity"] == live_runner.START_CASH, result
 
 
+def test_every_board_row_has_an_explicit_start() -> None:
+    names = {name for _, name, _ in [*live_runner.FIELD, *live_runner.PRIVATE_FIELD]}
+    assert names <= set(live_runner.ENTRY), names - set(live_runner.ENTRY)
+    assert live_runner.ENTRY["aaryan"] == "2026-07-13"
+
+
 def run() -> None:
     test_same_day_entry_scores_opening_session()
     test_future_entry_does_not_backfill()
+    test_every_board_row_has_an_explicit_start()
     print("live_runner_selftest: PASS")
 
 
