@@ -104,6 +104,7 @@ PRIVATE_FIELD = [
     ("meet_agent.py",                "meet",                   "round 2 · entrant"),
     ("vishwas_agent.py",             "vishwas",                "round 2 · entrant"),
     ("aaryan_agent.py",              "aaryan",                 "round 2 · entrant"),
+    ("elamaran_agent.py",            "elamaran",               "round 2 · entrant"),
 ]
 
 EVAL_DAYS = 60       # (history sizing only) trailing window used when fetching bars
@@ -157,6 +158,8 @@ ENTRY = {
     "vishwas": ROUND_START,
     # Submitted after the Jul 10 close; first eligible US session is Jul 13.
     "aaryan": "2026-07-13",
+    # Corrected submission arrived before the Jul 13 US market open.
+    "elamaran": "2026-07-13",
 }
 CHART_START = ROUND_START    # common x-axis for the illustrative race chart (Round 2 open)
 SLIP_EQUITY = 0.0005
