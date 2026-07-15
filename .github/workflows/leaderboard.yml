@@ -1,14 +1,10 @@
 name: live-leaderboard
 
-# Refresh the leaderboard on real market data while the US market is open and
-# commit leaderboard.json (the site reads it). Every 2 hours during the session
-# means the numbers genuinely move (the daily bar's last price updates intraday) —
-# not faked motion, just real marks. No runs after the close. Manual run available.
+# Manual recovery job only. Scheduled scoring runs on the pinned Mac because
+# private entrant code is intentionally absent from this public repository.
+# Running this workflow on a timer would refresh QQQ while silently carrying
+# stale private results forward.
 on:
-  schedule:
-    # Every 2h while the US market is open: 14/16/18/20 UTC = ~10:00 ET through the
-    # 16:00 ET (20:00 UTC) close, Mon–Fri. Set for EDT (the Round 2 window). No runs after close.
-    - cron: "0 14,16,18,20 * * 1-5"
   workflow_dispatch:
 
 permissions:

@@ -426,7 +426,7 @@ def main() -> int:
         rows.append({"name": name, "label": label,
                      "equity": m["equity"], "pnl": m["pnl"],
                      "ret": round(m["ret"], 4), "trades": m["trades"],
-                     "days": m["days"], "since": entry,
+                     "days": m["days"], "since": entry, "as_of": asof,
                      # for live intraday marking on the site (public bots only)
                      "cash": m["cash"], "holdings": m["holdings"]})
         # right-align the per-bot curve on the common chart axis (flat $100k before entry)
@@ -462,7 +462,8 @@ def main() -> int:
         if rec:
             rows.append({"name": name, "label": rec["label"], "equity": rec["equity"],
                          "pnl": rec["pnl"], "ret": rec["ret"], "trades": rec["trades"],
-                         "days": rec.get("days"), "since": rec.get("since")})
+                         "days": rec.get("days"), "since": rec.get("since"),
+                         "as_of": rec.get("as_of")})
             if rec.get("curve"):
                 curves[name] = rec["curve"]   # numbers only — keeps the race chart intact
     if saved:
@@ -472,7 +473,10 @@ def main() -> int:
     rows_by_name = {r["name"]: r for r in rows}
     benchmark = rows_by_name.get(BENCHMARK_NAME)
     benchmark_ret = benchmark.get("ret", 0.0) if benchmark else 0.0
-    entrants = [r for r in rows if "entrant" in (r.get("label") or "").lower()]
+    entrants = [
+        r for r in rows
+        if "entrant" in (r.get("label") or "").lower() and r.get("as_of") == asof
+    ]
     qualified = [r for r in entrants if r.get("ret", -1e9) > benchmark_ret]
     prize_positions = []
     for rank, (row, prize) in enumerate(zip(qualified, PRIZE_SPLIT), 1):
@@ -526,7 +530,7 @@ def main() -> int:
             "top_10_points": POINTS_TABLE,
             "benchmark_points": f"Beat {BENCHMARK_NAME}, the prior round winner, over the Round 2 forward window.",
         },
-        "note": "Live Round 2 — standings refresh from the latest fetched market bars. Arnav, the Round 1 winner, is the published benchmark. Prize positions and builder points are entrant-only and only unlock for entries that beat Arnav over the Round 2 forward window. Each agent starts a $100,000 paper account at its first scored market session and is scored only from there — so no one can optimise against market history they had already seen, and submitting later gives no edge. 'days' is each bot's live window so far. Same data and fills for everyone.",
+        "note": "Live Round 2 — standings refresh from the latest fetched market bars. Arnav, the Round 1 winner, is the published benchmark. Prize positions and builder points are entrant-only and only unlock for current entries that beat Arnav over the Round 2 forward window. A row whose as_of date trails the board is shown for continuity but cannot hold a prize or points position until it is rescored. Each agent starts a $100,000 paper account at its first scored market session and is scored only from there — so no one can optimise against market history they had already seen, and submitting later gives no edge. 'days' is each bot's live window so far. Same data and fills for everyone.",
         "bots": rows,
     }
     OUT.write_text(json.dumps(payload, indent=2))

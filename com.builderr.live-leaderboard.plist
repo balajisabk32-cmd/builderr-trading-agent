@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.builderr.live-leaderboard</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/zsh</string>
+    <string>/Users/ssinha/Documents/Codex/2026-07-04/look-at-the-builderr-skill-and/work/builderr-trading-template/refresh_live_leaderboard.sh</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>/Users/ssinha/Documents/Codex/2026-07-04/look-at-the-builderr-skill-and/work/builderr-trading-template</string>
+  <key>StartInterval</key>
+  <integer>1800</integer>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>HOME</key>
+    <string>/Users/ssinha</string>
+    <key>PATH</key>
+    <string>/Library/Frameworks/Python.framework/Versions/3.12/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+  </dict>
+  <key>StandardOutPath</key>
+  <string>/Users/ssinha/Library/Logs/builderr-live-leaderboard.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/ssinha/Library/Logs/builderr-live-leaderboard-error.log</string>
+</dict>
+</plist>
