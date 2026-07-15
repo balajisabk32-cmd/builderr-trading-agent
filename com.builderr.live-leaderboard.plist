@@ -7,10 +7,10 @@
   <key>ProgramArguments</key>
   <array>
     <string>/bin/zsh</string>
-    <string>/Users/ssinha/Documents/Codex/2026-07-04/look-at-the-builderr-skill-and/work/builderr-trading-template/refresh_live_leaderboard.sh</string>
+    <string>/Users/ssinha/.builderr-trading-runner/refresh_live_leaderboard.sh</string>
   </array>
   <key>WorkingDirectory</key>
-  <string>/Users/ssinha/Documents/Codex/2026-07-04/look-at-the-builderr-skill-and/work/builderr-trading-template</string>
+  <string>/Users/ssinha/.builderr-trading-runner</string>
   <key>StartInterval</key>
   <integer>1800</integer>
   <key>RunAtLoad</key>
