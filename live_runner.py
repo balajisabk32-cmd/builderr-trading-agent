@@ -138,7 +138,8 @@ ENTRY = {
     "rohit": ROUND_START,
     "nagarjuna": ROUND_START,
     "balaji": ROUND_START,
-    "ajai": "2026-07-09",
+    # Revision 1 arrived after the Jul 17 close; score it forward from Jul 20.
+    "ajai": "2026-07-20",
     "aksham": ROUND_START,
     "darshan": ROUND_START,
     "tanishq": ROUND_START,
@@ -157,8 +158,8 @@ ENTRY = {
     "rishchith": "2026-07-08",
     "meet": "2026-07-10",
     "vishwas": ROUND_START,
-    # Submitted after the Jul 10 close; first eligible US session is Jul 13.
-    "aaryan": "2026-07-13",
+    # Revision 1 arrived after the Jul 17 close; score it forward from Jul 20.
+    "aaryan": "2026-07-20",
     # Corrected submission arrived before the Jul 13 US market open.
     "elamaran": "2026-07-13",
     # Private repo access was confirmed during the Jul 16 US session.
