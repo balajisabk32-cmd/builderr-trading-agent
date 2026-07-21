@@ -106,6 +106,7 @@ PRIVATE_FIELD = [
     ("aaryan_agent.py",              "aaryan",                 "round 2 · entrant"),
     ("elamaran_agent.py",            "elamaran",               "round 2 · entrant"),
     ("dhruv_agent.py",               "dhruv",                  "round 2 · entrant"),
+    ("vishal_agent.py",              "vishal",                  "round 2 · entrant"),
 ]
 
 EVAL_DAYS = 60       # (history sizing only) trailing window used when fetching bars
@@ -138,8 +139,8 @@ ENTRY = {
     "rohit": ROUND_START,
     "nagarjuna": ROUND_START,
     "balaji": ROUND_START,
-    # Revision 1 arrived after the Jul 17 close; score it forward from Jul 20.
-    "ajai": "2026-07-20",
+    # Revision 2 arrived before the Jul 21 open; score it forward from Jul 21.
+    "ajai": "2026-07-21",
     "aksham": ROUND_START,
     "darshan": ROUND_START,
     "tanishq": ROUND_START,
@@ -164,6 +165,8 @@ ENTRY = {
     "elamaran": "2026-07-13",
     # Private repo access was confirmed during the Jul 16 US session.
     "dhruv": "2026-07-16",
+    # Submission arrived after the Jul 20 close; score it forward from Jul 21.
+    "vishal": "2026-07-21",
 }
 CHART_START = ROUND_START    # common x-axis for the illustrative race chart (Round 2 open)
 SLIP_EQUITY = 0.0005
@@ -455,11 +458,14 @@ def main() -> int:
             try:
                 m = run_bot(load_decide_from(p), bars, entry)
                 aligned = [START_CASH] * max(0, len(chart_dates) - len(m["curve"])) + m["curve"]
-                saved[name] = {"label": label, "equity": m["equity"], "pnl": m["pnl"],
-                               "ret": round(m["ret"], 4), "trades": m["trades"],
-                               "days": m["days"], "since": entry, "as_of": asof,
-                               "curve": aligned}
-                print(f"  {name:24s} (private) ${m['equity']:,.0f}  P&L {m['pnl']:+,.0f} ({m['ret']*100:+.2f}%)  {m['days']}d  Trades={m['trades']}")
+                if m["days"] > 0:
+                    saved[name] = {"label": label, "equity": m["equity"], "pnl": m["pnl"],
+                                   "ret": round(m["ret"], 4), "trades": m["trades"],
+                                   "days": m["days"], "since": entry, "as_of": asof,
+                                   "curve": aligned}
+                    print(f"  {name:24s} (private) ${m['equity']:,.0f}  P&L {m['pnl']:+,.0f} ({m['ret']*100:+.2f}%)  {m['days']}d  Trades={m['trades']}")
+                else:
+                    print(f"  {name:24s} (private) pending first scored session from {entry}")
             except Exception as e:  # noqa: BLE001
                 print(f"skip private {filename}: {e!r}")
         rec = saved.get(name)
