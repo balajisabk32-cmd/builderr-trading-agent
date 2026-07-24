@@ -134,7 +134,8 @@ ENTRY = {
     "sumegh": ROUND_START,
     "shyam": ROUND_START,
     "harsimran": ROUND_START,
-    "sankeerth": ROUND_START,
+    # Revision arrived Jul 23; score only from the first session after receipt.
+    "sankeerth": "2026-07-23",
     "siddu": ROUND_START,
     "rohit": ROUND_START,
     "nagarjuna": ROUND_START,
@@ -163,8 +164,8 @@ ENTRY = {
     "aaryan": "2026-07-20",
     # Corrected submission arrived before the Jul 13 US market open.
     "elamaran": "2026-07-13",
-    # Private repo access was confirmed during the Jul 16 US session.
-    "dhruv": "2026-07-16",
+    # Revision arrived Jul 23; score only from the first session after receipt.
+    "dhruv": "2026-07-23",
     # Submission arrived after the Jul 20 close; score it forward from Jul 21.
     "vishal": "2026-07-21",
 }
