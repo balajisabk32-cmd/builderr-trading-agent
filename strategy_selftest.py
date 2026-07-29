@@ -147,6 +147,7 @@ def reset_agent_state() -> None:
     agent._last_rebalance_bar_date = None
     agent._last_targets = {}
     agent._last_regime_risk_on = None
+    agent._equity_history.clear()
 
 
 def beta_gross(weights: dict[str, float]) -> float:
@@ -347,6 +348,32 @@ def test_defensive_topup_respects_its_bounds_when_enabled() -> None:
         assert all(w <= agent.MAX_WEIGHT + 1e-9 for w in weights.values()), weights
     finally:
         agent.DEFENSIVE_TOPUP = original
+
+
+def test_circuit_breaker_cuts_exposure_on_a_fast_drop() -> None:
+    """A book bleeding faster than the index should de-risk on its own."""
+    reset_agent_state()
+    assert agent._circuit_breaker_scale(100_000.0) == 1.0        # needs history
+    for _ in range(3):
+        agent._circuit_breaker_scale(100_000.0)
+    assert agent._circuit_breaker_scale(99_000.0) == 1.0         # -1%: no trigger
+    cut = agent._circuit_breaker_scale(96_000.0)                 # -4%: trigger
+    assert cut == agent.CIRCUIT_BREAKER_CUT, cut
+    reset_agent_state()
+
+
+def test_circuit_breaker_scales_the_whole_book() -> None:
+    reset_agent_state()
+    m = market("broad")
+    full = agent.target_weights(m)
+    for _ in range(4):
+        agent._circuit_breaker_scale(100_000.0)
+    prices = last_prices(m)
+    orders = agent.decide(m, portfolio(100_000.0, prices=prices), 100_000.0)
+    assert orders, "should still trade, just smaller"
+    spend = sum(o["quantity"] * prices[o["ticker"]] for o in orders if o["side"] == "buy")
+    assert spend < sum(full.values()) * 100_000.0, (spend, full)
+    reset_agent_state()
 
 
 def test_caps_hold_in_every_regime() -> None:

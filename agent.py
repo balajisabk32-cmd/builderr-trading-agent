@@ -115,6 +115,37 @@ MAX_PER_GROUP = 3            # hard ceiling from any one theme, in any pass
 # modestly, trending. Left in place, off, for retesting on better data.
 MIN_RELATIVE_MOMENTUM = 0.0
 
+# Rank by momentum divided by realized vol instead of raw momentum, so a name
+# that ground out its gain steadily outranks one that got there on two gap days.
+# Same idea as a multi-horizon "Sharpe ranker" but with ZERO new tuned weights.
+#
+# OFF: it failed the cross-check. On two years of real market data it returned
+# +12.55% vs +15.99% with Sharpe 0.73 vs 0.79, and on the sample windows it was
+# a wash (-2.82% vs -3.01% summed) while nearly doubling calm-market turnover
+# (39 trades vs 21). Lower return, lower Sharpe, more slippage.
+VOL_NORMALIZED_RANKING = False
+
+# Circuit breaker: if equity falls more than CIRCUIT_BREAKER_DROP below its
+# rolling CIRCUIT_BREAKER_LOOKBACK-session peak, scale every target by
+# CIRCUIT_BREAKER_CUT until it recovers. It watches the BOOK, not the index --
+# the regime filter already watches QQQ, and this exists to catch a book that
+# is bleeding for a reason the index has not shown yet.
+#
+# ON, and it is the only addition that improved BOTH datasets independently:
+#   real 2y data    +15.99% -> +17.16%,  Sharpe 0.79 -> 0.87
+#   sample windows  vol-spike -11.08% -> -4.99%,  worst DD 13.1% -> 7.1%
+# It costs ~2 points in a grinding selloff (-2.46% -> -4.57%), where it cuts
+# and re-enters into the chop. Worth it: the crash case is what ends a run.
+# Parameters are flat under perturbation: drop is stable across 2.0-3.0% (it
+# only degrades at 4%), lookback peaks smoothly at 10, and cut improves
+# monotonically as it gets more aggressive on BOTH datasets. 0.3 scored best of
+# the values tested, but it sits at the edge of the tested range, so 0.4 takes
+# nearly all of the benefit without extrapolating past the evidence.
+CIRCUIT_BREAKER = True
+CIRCUIT_BREAKER_LOOKBACK = 10
+CIRCUIT_BREAKER_DROP = 0.025
+CIRCUIT_BREAKER_CUT = 0.4
+
 # Risk-off sleeve: utilities and staples. Used two ways -- as the entire book in
 # a risk-off regime, and as the top-up for unused budget in a risk-on regime.
 # Only ever held when they are themselves trending, otherwise it is cash.
@@ -210,6 +241,27 @@ BETA_MULTIPLE: dict[str, float] = {
 _last_rebalance_bar_date: str | None = None
 _last_targets: dict[str, float] = {}
 _last_regime_risk_on: bool | None = None
+_equity_history: list[float] = []      # rolling equity, for the circuit breaker
+
+
+def _circuit_breaker_scale(total_equity: float) -> float:
+    """1.0 normally, CIRCUIT_BREAKER_CUT while the book is in a fast drawdown.
+
+    Deliberately driven by realized portfolio equity rather than an index: the
+    regime filter already watches QQQ, and this is meant to catch the case where
+    the book is bleeding for a reason the index has not shown yet.
+    """
+    if not CIRCUIT_BREAKER:
+        return 1.0
+    if total_equity > 0.0 and math.isfinite(total_equity):
+        _equity_history.append(total_equity)
+        del _equity_history[:-(CIRCUIT_BREAKER_LOOKBACK + 1)]
+    if len(_equity_history) < 3:
+        return 1.0
+    peak = max(_equity_history)
+    if peak <= 0.0:
+        return 1.0
+    return CIRCUIT_BREAKER_CUT if (peak - total_equity) / peak > CIRCUIT_BREAKER_DROP else 1.0
 
 
 # --------------------------------------------------------------------------
@@ -434,7 +486,12 @@ def rank_candidates(market_state: dict[str, list[dict[str, Any]]]) -> list[tuple
             continue
         if REQUIRE_POSITIVE_MOMENTUM and mom <= 0.0:  # absolute-momentum gate
             continue
-        scored.append((mom, ticker))
+
+        score = mom
+        if VOL_NORMALIZED_RANKING:
+            vol = realized_vol(series, VOL_DAYS)
+            score = mom / max(vol, VOL_FLOOR) if vol is not None else mom
+        scored.append((score, ticker))
 
     # Sort by momentum desc; ticker asc as a deterministic tie-break so the same
     # data always yields the same book (the fairness suite gates on determinism).
@@ -879,6 +936,10 @@ def decide(market_state: dict, portfolio_state: dict, cash: float) -> list[dict]
         total_equity = equity(portfolio_state, cash, prices)
         if total_equity <= 0.0:
             return []
+
+        scale = _circuit_breaker_scale(total_equity)
+        if scale < 1.0 and targets:
+            targets = {t: w * scale for t, w in targets.items()}
 
         # An empty target book with nothing held is a no-op; skip the work.
         if not targets and not positions:
