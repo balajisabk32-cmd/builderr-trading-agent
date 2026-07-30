@@ -100,110 +100,6 @@ TICKER_GROUP: dict[str, str] = {
 GROUP_CAP_PASSES: tuple[int, ...] = (1, 2, 3)
 MAX_PER_GROUP = 3            # hard ceiling from any one theme, in any pass
 
-# Optional bar requiring a candidate's momentum to be at least this fraction of
-# the day's best, so a barely-positive gold print cannot displace a semi running
-# +40% purely because the group cap wants variety.
-#
-# DISABLED (0.0) because the measurement refused to support it: sum-of-returns
-# went -2.8% at 0.0, -4.3% at 0.15, -7.6% at 0.25, then -0.5% at 0.40 and -1.6%
-# at 0.60. A non-monotonic response with a cliff between 0.25 and 0.40 is the
-# textbook overfitting signature this brief warns about -- and the "good" 0.40
-# value wins by cutting trades to 7 and sitting in cash, which is luck specific
-# to these three windows, not an edge. The gate it would guard against is also
-# mild: a diversifier still has to clear its own 50-day SMA and post positive
-# 90-day momentum, so the worst case is holding something genuinely, if only
-# modestly, trending. Left in place, off, for retesting on better data.
-MIN_RELATIVE_MOMENTUM = 0.0
-
-# Per-position trailing stop (chandelier exit): drop a name once it closes more
-# than ATR_MULT true-ranges below its recent high. Stateless by design -- it uses
-# a rolling high rather than an entry price, so it needs no per-position memory
-# and cannot desync from the engine's book.
-#
-# OFF: it fails the 26-year regime test and is not robust to its own parameter.
-#            live     samples   9-regime mean   worst regime
-#   off      +0.54%    +2.24%       +4.91%         -4.32%
-#   x2.0     -3.51%    +1.66%       +3.71%         -4.81%
-#   x2.5     +0.54%    +2.63%       +4.20%         -4.92%
-#   x3.5     +0.54%    +1.21%       +4.45%         -4.32%
-# x2.5 improves the sample windows but costs 0.71pt/yr across nine market eras,
-# and the response is non-monotonic in the multiplier -- the same single-value
-# spike that disqualified the 80-day regime filter. Mechanically it is redundant:
-# a per-name stop sells into precisely the shakeouts the portfolio-level circuit
-# breaker already rides through, so the two fight each other. Keeping one.
-# --------------------------------------------------------------------------
-# EXPERIMENTAL MECHANISMS -- all implemented, all measured, all default OFF.
-# --------------------------------------------------------------------------
-# Each was tested on three independent datasets: the live scored window, three
-# sample regimes, and nine market eras spanning 26 years. A mechanism ships only
-# if it improves the two INDEPENDENT sets without giving back locked-in days.
-#
-#                              live     samples   26y mean   worst era
-#   BASELINE (shipped)        +0.54%     +2.24%     +4.91%     -4.32%
-#   1 breadth gate           +0.54%     +2.84%     +3.12%     -2.94%   CAGR -1.79/yr
-#   2 blended momentum       -0.21%     +1.78%     +4.10%     -5.61%   worse everywhere
-#   3 rank hysteresis        -0.66%     -1.90%     +3.27%     -3.59%   trades 11->25
-#   4 proportional exposure  +0.13%     +1.96%     +6.25%     -3.78%   costs live+samples
-#   5 neutral carry sleeve   -2.29%     +0.73%     +3.46%     -2.14%   worse everywhere
-#   1+4 combined             +0.13%     +3.11%     +4.37%     -3.78%   breadth cancels 4
-#   4 with PROP_MIN=0.90     +0.13%     +2.08%     +6.37%     -3.88%   costs live+samples
-#
-# Notes worth keeping:
-#  * #1 buys drawdown protection with return -- it de-risks on sector dispersion
-#    that resolves upward more often than not, which is why 26y CAGR falls hard.
-#  * #3 did the OPPOSITE of its purpose. Giving held names slot priority scrambles
-#    the momentum ordering the group-cap passes consume, so selection oscillates
-#    and turnover more than doubles.
-#  * #4 is the near-miss and the one worth revisiting in a LONGER round: trimming
-#    size near the trend line compounds well over decades (+1.35pt/yr), but with
-#    QQQ only ~1.5% above its 120-day average it cuts exposure today, which costs
-#    more over a 3-week remainder than the annual edge can repay.
-#  * #5 repeats the DEFENSIVE_TOPUP result: holding defensives instead of cash
-#    costs return in almost every era. Cash is a position.
-# --------------------------------------------------------------------------
-# 1. Sector-participation breadth gate. A single index line lags broad decay;
-#    counting how many sectors hold their own 50-day trend is a wider read.
-BREADTH_GATE = False
-BREADTH_TICKERS: tuple[str, ...] = ("XLK","XLF","XLE","XLV","XLI","XLY","XLP","XLU","SMH")
-BREADTH_STRONG = 0.60        # above this -> full allocation
-BREADTH_WEAK = 0.33          # below this -> all cash
-BREADTH_MID_SCALE = 0.75     # exposure multiplier in the neutral band
-
-# 2. Multi-window blended momentum -- smoothing, not a new signal.
-BLENDED_MOMENTUM = False
-BLEND_WINDOWS: tuple[tuple[int, float], ...] = ((20, 0.20), (60, 0.50), (120, 0.30))
-
-# 3. Rank hysteresis: enter at TOP_N, but hold until rank falls past EXIT_RANK.
-RANK_HYSTERESIS = False
-EXIT_RANK = 5
-
-# 4. Proportional exposure: scale gross with distance above the regime SMA
-#    instead of a binary in/out.
-PROPORTIONAL_EXPOSURE = False
-PROP_MIN = 0.80
-PROP_MAX = 1.30
-PROP_FULL_AT = 0.04          # distance above the SMA that earns PROP_MAX
-
-# 5. Defensive carry in the NEUTRAL band (below the 50-day, above the regime SMA).
-NEUTRAL_CARRY = False
-NEUTRAL_CARRY_GROSS = 0.80
-NEUTRAL_CARRY_MAX = 2
-
-ATR_TRAILING_STOP = False
-ATR_DAYS = 14
-ATR_MULT = 2.5
-ATR_HIGH_LOOKBACK = 20
-
-# Rank by momentum divided by realized vol instead of raw momentum, so a name
-# that ground out its gain steadily outranks one that got there on two gap days.
-# Same idea as a multi-horizon "Sharpe ranker" but with ZERO new tuned weights.
-#
-# OFF: it failed the cross-check. On two years of real market data it returned
-# +12.55% vs +15.99% with Sharpe 0.73 vs 0.79, and on the sample windows it was
-# a wash (-2.82% vs -3.01% summed) while nearly doubling calm-market turnover
-# (39 trades vs 21). Lower return, lower Sharpe, more slippage.
-VOL_NORMALIZED_RANKING = False
-
 # Circuit breaker: if equity falls more than CIRCUIT_BREAKER_DROP below its
 # rolling CIRCUIT_BREAKER_LOOKBACK-session peak, scale every target by
 # CIRCUIT_BREAKER_CUT until it recovers. It watches the BOOK, not the index --
@@ -261,7 +157,6 @@ REGIME_TICKER = "QQQ"
 # 80-day was tested too and rejected -- it posts the best live number (+1.48%)
 # but neighbouring values swing 1.2pt, and it FAILS the sample gate (-0.19%).
 REGIME_SMA_DAYS = 120
-REGIME_REENTRY_BUFFER = 0.0  # hysteresis; 0.0 == the literal spec (see note below)
 MOMENTUM_DAYS = 90           # ranking lookback (~3 trading months, "hold what works")
 TREND_SMA_DAYS = 50          # per-asset trend gate; below it, the name is out
 DEFENSIVE_MOM_DAYS = 63      # ~3 months, gates the XLU/XLP defensive sleeve
@@ -286,23 +181,6 @@ MAX_GROSS = 0.90             # never invest more than this fraction of equity
 MIN_GROSS = 0.20             # below this the book is not worth the slippage
 TARGET_GROSS = MAX_GROSS     # nominal budget before vol scaling (defensive sleeve)
 
-# Vol targeting plus a 28% cap on 3 names leaves 25-30% of the account idle in a
-# typical risk-on book. Offering that residue to the defensive sleeve looks like
-# free return -- recover the cash drag with low-vol trending assets.
-#
-# It is not free, and this is OFF because the measurement said so. Enabling it
-# on the sample windows (bounded at 10/20/30%, with and without the trend gate)
-# cost 1.5-4.1 points in the vol-spike window and 0.3-0.8 in the selloff, to buy
-# 0.2-0.6 points in the calm uptrend -- monotonically worse the bigger the
-# top-up. The mechanism is plain: the sleeve is admitted on TRAILING momentum,
-# which was still positive for utilities going into February 2020, so the book
-# levers from 0.77x to 0.93x gross immediately before a crash. Idle cash is not
-# dead weight; not falling is what it is FOR.
-#
-# Flip to True to re-enable (MAX_DEFENSIVE_TOPUP bounds it).
-DEFENSIVE_TOPUP = False
-MAX_DEFENSIVE_TOPUP = 0.20   # ceiling on the top-up itself, so recovering drag
-                             # can never quietly become a large second book
 DEFENSIVE_REQUIRE_TREND = True  # defensive legs must also be above their 50-day
                                 # SMA -- a 63-day momentum gate alone is too slow
                                 # and was still long utilities into the 2020 crash
@@ -430,37 +308,6 @@ def realized_vol(values: list[float], window: int) -> float | None:
     return vol if math.isfinite(vol) else None
 
 
-def atr(bars: list[dict[str, Any]] | None, window: int = ATR_DAYS) -> float | None:
-    """Average True Range over `window` sessions. None if the bars can't support it."""
-    if not bars or len(bars) < window + 1:
-        return None
-    trs: list[float] = []
-    for i in range(len(bars) - window, len(bars)):
-        try:
-            high = float(bars[i]["high"]); low = float(bars[i]["low"])
-            prev_close = float(bars[i - 1]["close"])
-        except (KeyError, TypeError, ValueError, IndexError):
-            return None
-        trs.append(max(high - low, abs(high - prev_close), abs(low - prev_close)))
-    if not trs:
-        return None
-    out = sum(trs) / len(trs)
-    return out if math.isfinite(out) and out > 0 else None
-
-
-def stopped_out(bars: list[dict[str, Any]] | None) -> bool:
-    """True when price has fallen ATR_MULT true-ranges below its rolling high."""
-    if not ATR_TRAILING_STOP:
-        return False
-    series = closes(bars)
-    if len(series) < max(ATR_HIGH_LOOKBACK, ATR_DAYS + 1):
-        return False
-    a = atr(bars)
-    if a is None:
-        return False
-    return series[-1] < max(series[-ATR_HIGH_LOOKBACK:]) - ATR_MULT * a
-
-
 def current_positions(portfolio_state: dict[str, Any]) -> dict[str, dict[str, float]]:
     """Normalize portfolio_state["positions"] into {TICKER: {quantity, avg_cost}}.
 
@@ -557,73 +404,17 @@ def equity(portfolio_state: dict[str, Any], cash: float,
 # --------------------------------------------------------------------------
 # 1. REGIME CONTROL -- the risk-off switch
 # --------------------------------------------------------------------------
-def breadth_ratio(market_state: dict[str, list[dict[str, Any]]]) -> float | None:
-    """Fraction of sector ETFs trading above their own 50-day SMA.
-
-    Only counts sectors we actually have data for, so a partial feed degrades to
-    a narrower-but-valid reading rather than a wrong one.
-    """
-    have = above = 0
-    for ticker in BREADTH_TICKERS:
-        series = closes((market_state or {}).get(ticker))
-        if len(series) < TREND_SMA_DAYS:
-            continue
-        trend = sma(series, TREND_SMA_DAYS)
-        if trend is None or trend <= 0:
-            continue
-        have += 1
-        if series[-1] > trend:
-            above += 1
-    if have < 4:                       # too few sectors to call it breadth
-        return None
-    return above / float(have)
-
-
-def breadth_scale(market_state: dict[str, list[dict[str, Any]]]) -> float:
-    """1.0 / BREADTH_MID_SCALE / 0.0 depending on sector participation."""
-    if not BREADTH_GATE:
-        return 1.0
-    r = breadth_ratio(market_state)
-    if r is None:
-        return 1.0
-    if r < BREADTH_WEAK:
-        return 0.0
-    if r <= BREADTH_STRONG:
-        return BREADTH_MID_SCALE
-    return 1.0
-
-
-def proportional_scale(market_state: dict[str, list[dict[str, Any]]]) -> float:
-    """Gross multiplier from QQQ's distance above its regime SMA."""
-    if not PROPORTIONAL_EXPOSURE:
-        return 1.0
-    series = closes((market_state or {}).get(REGIME_TICKER))
-    if len(series) < REGIME_SMA_DAYS:
-        return 1.0
-    trend = sma(series, REGIME_SMA_DAYS)
-    if trend is None or trend <= 0:
-        return 1.0
-    dist = (series[-1] / trend) - 1.0
-    if dist <= 0:
-        return PROP_MIN
-    frac = min(dist / PROP_FULL_AT, 1.0) if PROP_FULL_AT > 0 else 1.0
-    return PROP_MIN + (PROP_MAX - PROP_MIN) * frac
-
-
 def regime_is_risk_on(market_state: dict[str, list[dict[str, Any]]],
                       previous: bool | None = None) -> bool | None:
-    """Is QQQ above its 100-day SMA?
+    """Is QQQ above its REGIME_SMA_DAYS-day SMA?
 
     Returns True (risk-on), False (risk-off), or None when QQQ has too little
     history to judge. None is deliberately distinct from False: with no regime
     read we decline to trade at all rather than liquidate the book on the back
     of a data gap.
 
-    REGIME_REENTRY_BUFFER adds optional hysteresis. At its default of 0.0 this
-    is exactly the specified rule (a strict SMA cross). Raising it to e.g. 0.005
-    means, once risk-off, QQQ must reclaim the SMA by 0.5% before we re-enter --
-    which damps whipsaw when price oscillates around the line. It is exposed as
-    a knob rather than baked in, so the default behaviour stays literal.
+    `previous` is accepted (and unused) so callers can pass the prior regime
+    without needing to know whether this filter has hysteresis.
     """
     series = closes((market_state or {}).get(REGIME_TICKER))
     if len(series) < REGIME_SMA_DAYS:
@@ -632,11 +423,7 @@ def regime_is_risk_on(market_state: dict[str, list[dict[str, Any]]],
     if trend is None or trend <= 0.0:
         return None
 
-    price = series[-1]
-    if previous is False and REGIME_REENTRY_BUFFER > 0.0:
-        # Coming back from risk-off: demand a clear reclaim, not a tick above.
-        return price > trend * (1.0 + REGIME_REENTRY_BUFFER)
-    return price > trend
+    return series[-1] > trend
 
 
 # --------------------------------------------------------------------------
@@ -670,22 +457,8 @@ def rank_candidates(market_state: dict[str, list[dict[str, Any]]]) -> list[tuple
             continue
         if REQUIRE_POSITIVE_MOMENTUM and mom <= 0.0:  # absolute-momentum gate
             continue
-        if stopped_out((market_state or {}).get(ticker)):   # trailing-stop gate
-            continue
 
-        score = mom
-        if BLENDED_MOMENTUM:
-            parts, wsum = 0.0, 0.0
-            for win, wt in BLEND_WINDOWS:
-                m2 = momentum(series, win)
-                if m2 is not None:
-                    parts += wt * m2; wsum += wt
-            if wsum > 0:
-                score = parts / wsum
-        if VOL_NORMALIZED_RANKING:
-            vol = realized_vol(series, VOL_DAYS)
-            score = mom / max(vol, VOL_FLOOR) if vol is not None else mom
-        scored.append((score, ticker))
+        scored.append((mom, ticker))
 
     # Sort by momentum desc; ticker asc as a deterministic tie-break so the same
     # data always yields the same book (the fairness suite gates on determinism).
@@ -708,24 +481,6 @@ def select_leaders(market_state: dict[str, list[dict[str, Any]]]) -> list[str]:
     failed its own trend test. Cash is an acceptable third slot.
     """
     ranked = rank_candidates(market_state)
-    if ranked and MIN_RELATIVE_MOMENTUM > 0.0:
-        # Drop candidates that are only technically trending relative to the
-        # day's leader, so the group cap cannot buy variety with dead weight.
-        floor = ranked[0][0] * MIN_RELATIVE_MOMENTUM
-        ranked = [pair for pair in ranked if pair[0] >= floor]
-
-    # Rank hysteresis: a name already in the book keeps its slot until it drops
-    # past EXIT_RANK, so #3/#4 noise does not churn the portfolio every session.
-    if RANK_HYSTERESIS and _last_targets:
-        order = [t for _, t in ranked]
-        held_ok = [t for t in order[:EXIT_RANK] if t in _last_targets]
-        fresh = [t for t in order if t not in _last_targets]
-        merged: list[str] = []
-        for t in held_ok + fresh:
-            if t not in merged:
-                merged.append(t)
-        ranked = [(dict((b, a) for a, b in ranked).get(t, 0.0), t) for t in merged]
-
     picked: list[str] = []
     used: dict[str, int] = {}
     for cap in GROUP_CAP_PASSES:
@@ -910,23 +665,6 @@ def target_weights(market_state: dict[str, list[dict[str, Any]]],
     if not risk_on:
         return defensive_weights(market_state)
 
-    # Neutral band: still above the regime SMA but below the 50-day. Sitting in
-    # cash here surrenders carry, so optionally hold trending defensives instead.
-    if NEUTRAL_CARRY:
-        q = closes((market_state or {}).get(REGIME_TICKER))
-        q50 = sma(q, TREND_SMA_DAYS) if q else None
-        if q50 is not None and q[-1] < q50:
-            legs = []
-            for t in ("XLP", "XLU", "XLV"):
-                c = closes((market_state or {}).get(t))
-                s50 = sma(c, TREND_SMA_DAYS) if c else None
-                if s50 is not None and c[-1] > s50:
-                    legs.append(t)
-            legs = legs[:NEUTRAL_CARRY_MAX]
-            if not legs:
-                return {}
-            return apply_caps({t: NEUTRAL_CARRY_GROSS / len(legs) for t in legs})
-
     leaders = select_leaders(market_state)
     if not leaders:
         # Risk-on tape but nothing is actually trending: sit in cash rather than
@@ -937,22 +675,9 @@ def target_weights(market_state: dict[str, list[dict[str, Any]]],
     # vol targeting decides how much of the account is at risk at all.
     shape = inverse_vol_weights(market_state, leaders, 1.0)
     budget = vol_target_gross(market_state, shape)
-    budget *= breadth_scale(market_state) * proportional_scale(market_state)
     if budget <= 0.0:
         return {}
     book = apply_caps({t: w * budget for t, w in shape.items()})
-
-    # Offer whatever the risk sleeve did not use to the defensive sleeve. This
-    # is the cash-drag recovery: vol targeting plus the 28% cap routinely leaves
-    # a quarter of the account idle, and low-vol trending assets are a better
-    # home for it than cash -- but ONLY if they pass their own trend gate, and
-    # never at the expense of the gross ceiling.
-    if DEFENSIVE_TOPUP:
-        residual = min(MAX_GROSS - sum(book.values()), MAX_DEFENSIVE_TOPUP)
-        if residual > 0.01:
-            for ticker, weight in defensive_weights(market_state, residual).items():
-                if ticker not in book:                # never double-count a holding
-                    book[ticker] = weight
 
     # Final belt: the combined book must still respect the gross ceiling.
     total = sum(book.values())
@@ -1231,11 +956,6 @@ def decide(market_state: dict, portfolio_state: dict, cash: float) -> list[dict]
 #     the declared ceiling and the residual cash absorbs slippage and gap risk.
 #   * select_leaders() also requires positive 90-day momentum (see its docstring).
 #   * An unreadable regime returns [] (hold) rather than liquidating.
-#
-# REGIME_REENTRY_BUFFER is left at 0.0, which is the literal specified rule (a
-# strict SMA cross). That is not deference: at 0.005 / 0.01 / 0.02 the buffer
-# made results WORSE in all three sample windows, because delaying re-entry
-# costs more than the whipsaw it avoids. The knob stays exposed for retesting.
 #
 # --------------------------------------------------------------------------
 # MEASURED EFFECT OF THE DIVERSIFIER SLEEVE (vs the AI-core-only book)

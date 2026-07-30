@@ -326,54 +326,16 @@ def test_defensive_trend_gate_excludes_a_falling_hedge() -> None:
     assert "XLU" not in agent.defensive_weights(m), agent.defensive_weights(m)
 
 
-def test_defensive_topup_is_disabled_by_default() -> None:
-    """Measured to cost 1.5-4.1 pts in the crash window; cash is not dead weight."""
-    assert agent.DEFENSIVE_TOPUP is False
-    weights = agent.target_weights(market("broad"))
-    assert not (set(weights) & set(agent.RISK_OFF_UNIVERSE)), weights
-
-
-def test_defensive_topup_respects_its_bounds_when_enabled() -> None:
-    original = agent.DEFENSIVE_TOPUP
-    try:
-        agent.DEFENSIVE_TOPUP = True
-        m = market("risk_on")
-        m["XLU"] = bars(rets(HISTORY, 0.0012, 0.002))
-        m["XLP"] = bars(rets(HISTORY, 0.0010, 0.002))
-        weights = agent.target_weights(m)
-        topup = sum(w for t, w in weights.items() if t in agent.RISK_OFF_UNIVERSE)
-        assert topup > 0.0, weights
-        assert topup <= agent.MAX_DEFENSIVE_TOPUP + 1e-9, weights
-        assert sum(weights.values()) <= agent.MAX_GROSS + 1e-9, weights
-        assert all(w <= agent.MAX_WEIGHT + 1e-9 for w in weights.values()), weights
-    finally:
-        agent.DEFENSIVE_TOPUP = original
-
-
-def test_circuit_breaker_cuts_exposure_on_a_fast_drop() -> None:
-    """A book bleeding faster than the index should de-risk on its own."""
-    reset_agent_state()
-    assert agent._circuit_breaker_scale(100_000.0) == 1.0        # needs history
-    for _ in range(3):
-        agent._circuit_breaker_scale(100_000.0)
-    assert agent._circuit_breaker_scale(99_000.0) == 1.0         # -1%: no trigger
-    cut = agent._circuit_breaker_scale(96_000.0)                 # -4%: trigger
-    assert cut == agent.CIRCUIT_BREAKER_CUT, cut
-    reset_agent_state()
-
-
-def test_circuit_breaker_scales_the_whole_book() -> None:
-    reset_agent_state()
+def test_risk_on_book_never_holds_the_defensive_sleeve() -> None:
+    """Idle cash stays cash in risk-on. Routing it to XLU/XLP was measured to
+    cost 1.5-4.1 points in the vol-spike window (see experiments.md #10)."""
     m = market("broad")
-    full = agent.target_weights(m)
-    for _ in range(4):
-        agent._circuit_breaker_scale(100_000.0)
-    prices = last_prices(m)
-    orders = agent.decide(m, portfolio(100_000.0, prices=prices), 100_000.0)
-    assert orders, "should still trade, just smaller"
-    spend = sum(o["quantity"] * prices[o["ticker"]] for o in orders if o["side"] == "buy")
-    assert spend < sum(full.values()) * 100_000.0, (spend, full)
-    reset_agent_state()
+    m["XLU"] = bars(rets(HISTORY, 0.0012, 0.002))   # trending, so it WOULD qualify
+    m["XLP"] = bars(rets(HISTORY, 0.0010, 0.002))
+    weights = agent.target_weights(m)
+    assert weights, "risk-on book should not be empty"
+    assert not (set(weights) & set(agent.RISK_OFF_UNIVERSE)), weights
+    assert sum(weights.values()) <= agent.MAX_GROSS + 1e-9, weights
 
 
 def test_caps_hold_in_every_regime() -> None:
