@@ -147,8 +147,8 @@ closing a gap in three weeks.**
 
 80-day posts the best live number of anything tested and is a **luck artifact**:
 neighbouring values swing 1.2pt (75d +1.30%, 85d +0.29%) and it fails gate C.
-110/120/130/140 form a genuine plateau; 150 is a cliff. 120 chosen as the highest
-value whose entire ±20% band (96–144) stays at-or-better than 100.
+110/120/130/140 form a genuine plateau and **140 is shipped** — see the
+walk-forward section above for why it beat 120, which was my first choice.
 
 ### 7. Universe breadth — the most dangerous result
 | universe | live | 2y | samples |
