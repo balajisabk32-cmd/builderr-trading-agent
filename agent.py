@@ -115,6 +115,27 @@ MAX_PER_GROUP = 3            # hard ceiling from any one theme, in any pass
 # modestly, trending. Left in place, off, for retesting on better data.
 MIN_RELATIVE_MOMENTUM = 0.0
 
+# Per-position trailing stop (chandelier exit): drop a name once it closes more
+# than ATR_MULT true-ranges below its recent high. Stateless by design -- it uses
+# a rolling high rather than an entry price, so it needs no per-position memory
+# and cannot desync from the engine's book.
+#
+# OFF: it fails the 26-year regime test and is not robust to its own parameter.
+#            live     samples   9-regime mean   worst regime
+#   off      +0.54%    +2.24%       +4.91%         -4.32%
+#   x2.0     -3.51%    +1.66%       +3.71%         -4.81%
+#   x2.5     +0.54%    +2.63%       +4.20%         -4.92%
+#   x3.5     +0.54%    +1.21%       +4.45%         -4.32%
+# x2.5 improves the sample windows but costs 0.71pt/yr across nine market eras,
+# and the response is non-monotonic in the multiplier -- the same single-value
+# spike that disqualified the 80-day regime filter. Mechanically it is redundant:
+# a per-name stop sells into precisely the shakeouts the portfolio-level circuit
+# breaker already rides through, so the two fight each other. Keeping one.
+ATR_TRAILING_STOP = False
+ATR_DAYS = 14
+ATR_MULT = 2.5
+ATR_HIGH_LOOKBACK = 20
+
 # Rank by momentum divided by realized vol instead of raw momentum, so a name
 # that ground out its gain steadily outranks one that got there on two gap days.
 # Same idea as a multi-horizon "Sharpe ranker" but with ZERO new tuned weights.
@@ -351,6 +372,37 @@ def realized_vol(values: list[float], window: int) -> float | None:
     return vol if math.isfinite(vol) else None
 
 
+def atr(bars: list[dict[str, Any]] | None, window: int = ATR_DAYS) -> float | None:
+    """Average True Range over `window` sessions. None if the bars can't support it."""
+    if not bars or len(bars) < window + 1:
+        return None
+    trs: list[float] = []
+    for i in range(len(bars) - window, len(bars)):
+        try:
+            high = float(bars[i]["high"]); low = float(bars[i]["low"])
+            prev_close = float(bars[i - 1]["close"])
+        except (KeyError, TypeError, ValueError, IndexError):
+            return None
+        trs.append(max(high - low, abs(high - prev_close), abs(low - prev_close)))
+    if not trs:
+        return None
+    out = sum(trs) / len(trs)
+    return out if math.isfinite(out) and out > 0 else None
+
+
+def stopped_out(bars: list[dict[str, Any]] | None) -> bool:
+    """True when price has fallen ATR_MULT true-ranges below its rolling high."""
+    if not ATR_TRAILING_STOP:
+        return False
+    series = closes(bars)
+    if len(series) < max(ATR_HIGH_LOOKBACK, ATR_DAYS + 1):
+        return False
+    a = atr(bars)
+    if a is None:
+        return False
+    return series[-1] < max(series[-ATR_HIGH_LOOKBACK:]) - ATR_MULT * a
+
+
 def current_positions(portfolio_state: dict[str, Any]) -> dict[str, dict[str, float]]:
     """Normalize portfolio_state["positions"] into {TICKER: {quantity, avg_cost}}.
 
@@ -506,6 +558,8 @@ def rank_candidates(market_state: dict[str, list[dict[str, Any]]]) -> list[tuple
         if series[-1] <= trend:                       # trend gate: below 50d SMA -> out
             continue
         if REQUIRE_POSITIVE_MOMENTUM and mom <= 0.0:  # absolute-momentum gate
+            continue
+        if stopped_out((market_state or {}).get(ticker)):   # trailing-stop gate
             continue
 
         score = mom
