@@ -160,7 +160,28 @@ REGIME_TICKER = "QQQ"
 # Round numbers on purpose. Every one of these survives a +/-20% perturbation
 # (see the sensitivity note at the bottom of the file) -- that is the anti-
 # curve-fitting requirement from AGENT_BRIEF.md, not a nicety.
-REGIME_SMA_DAYS = 100        # QQQ trend filter length -- the safety switch
+# QQQ trend filter length -- the safety switch, and the highest-leverage number
+# in this file. Raised from 100 to 120 on evidence, not taste:
+#
+#                        live      samples   sampDD   9-regime mean   worst regime
+#     100 (was)         +0.54%      +0.96%    7.14%       +4.55%         -5.24%
+#     120 (now)         +0.54%      +2.24%    6.40%       +4.91%         -4.32%
+#
+# 110/120/130/140 form a four-point plateau where BOTH independent datasets
+# improve, so this is not a single lucky value. The live window is identical for
+# every length from 100 to 160 -- QQQ currently sits above all of them, so the
+# filter is inert there and the change costs nothing already banked.
+#
+# 130 and 140 scored better still, but there is a cliff at 150 (samples collapse
+# to +0.99%, drawdown jumps to 7.80%) and a +/-20% perturbation of 130 reaches
+# 156 -- past it. 120's band is 96-144, entirely at-or-better than the old value.
+#
+# Counter-intuitively the LONGER filter handles crises better (dot-com -1.9% ->
+# -0.4%, GFC -5.2% -> -4.3%): a slower average is harder to whipsaw, and getting
+# shaken out then missing the rebound costs more than being a few days late.
+# 80-day was tested too and rejected -- it posts the best live number (+1.48%)
+# but neighbouring values swing 1.2pt, and it FAILS the sample gate (-0.19%).
+REGIME_SMA_DAYS = 120
 REGIME_REENTRY_BUFFER = 0.0  # hysteresis; 0.0 == the literal spec (see note below)
 MOMENTUM_DAYS = 90           # ranking lookback (~3 trading months, "hold what works")
 TREND_SMA_DAYS = 50          # per-asset trend gate; below it, the name is out
