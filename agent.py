@@ -136,27 +136,40 @@ REGIME_TICKER = "QQQ"
 # (see the sensitivity note at the bottom of the file) -- that is the anti-
 # curve-fitting requirement from AGENT_BRIEF.md, not a nicety.
 # QQQ trend filter length -- the safety switch, and the highest-leverage number
-# in this file. Raised from 100 to 120 on evidence, not taste:
+# in this file. 100 -> 140 on evidence, in two steps, with the second step
+# correcting a mistake in how I weighted the first.
 #
-#                        live      samples   sampDD   9-regime mean   worst regime
-#     100 (was)         +0.54%      +0.96%    7.14%       +4.55%         -5.24%
-#     120 (now)         +0.54%      +2.24%    6.40%       +4.91%         -4.32%
+#          live      samples   sampDD   26y mean   worst era
+#   100   +0.54%      +0.96%    7.14%     +4.55%     -5.24%
+#   120   +0.54%      +2.24%    6.40%     +4.91%     -4.32%
+#   140   +0.54%      +3.99%    6.08%     +5.40%     -3.13%
 #
-# 110/120/130/140 form a four-point plateau where BOTH independent datasets
-# improve, so this is not a single lucky value. The live window is identical for
-# every length from 100 to 160 -- QQQ currently sits above all of them, so the
-# filter is inert there and the change costs nothing already banked.
+# 140 dominates on every measure except mean regime drawdown (12.07% vs 11.89%),
+# and the live window is IDENTICAL for every length from 100 to 160 -- QQQ sits
+# above all of them, so this filter is inert over the already-scored days and the
+# change re-rolls nothing.
 #
-# 130 and 140 scored better still, but there is a cliff at 150 (samples collapse
-# to +0.99%, drawdown jumps to 7.80%) and a +/-20% perturbation of 130 reaches
-# 156 -- past it. 120's band is 96-144, entirely at-or-better than the old value.
+# Why not 120: walk-forward validation. Choosing the length on TRAINING data only
+# and measuring out-of-sample, both folds picked 140 over 100 and 120 -- and 140
+# then won the test period in both:
+#   train 2000-2013 -> picks 140:  test 2013-2026  140d +7.86% (DD 17.2%)
+#                                                  120d +7.43% (DD 18.1%)
+#   train 2000-2009 -> picks 140:  test 2010-2026  140d +6.49% (DD 17.2%)
+#                                                  120d +6.20% (DD 18.1%)
+# (130 was not in the walk-forward candidate set; it scores between the two.)
 #
-# Counter-intuitively the LONGER filter handles crises better (dot-com -1.9% ->
-# -0.4%, GFC -5.2% -> -4.3%): a slower average is harder to whipsaw, and getting
+# 120 was originally chosen to keep the whole +/-20% band clear of a "cliff" at
+# 150 where the SAMPLE windows collapse to +0.99%. That cliff is an artifact of
+# three short windows: across 26 years 150 gives +4.91% and 160 +4.77%, a gentle
+# decline, not a cliff. Weighting the weakest dataset over the strongest was the
+# error; 140 is what the strongest evidence supports.
+#
+# Counter-intuitively the LONGER filter handles crises BETTER (dot-com -1.9% ->
+# -0.4%, GFC -5.2% -> -4.3%): a slower average is harder to whipsaw, and being
 # shaken out then missing the rebound costs more than being a few days late.
-# 80-day was tested too and rejected -- it posts the best live number (+1.48%)
-# but neighbouring values swing 1.2pt, and it FAILS the sample gate (-0.19%).
-REGIME_SMA_DAYS = 120
+# 80-day was tested and rejected -- best live number (+1.48%) but neighbouring
+# values swing 1.2pt and it fails the sample gate (-0.19%). A luck artifact.
+REGIME_SMA_DAYS = 140
 MOMENTUM_DAYS = 90           # ranking lookback (~3 trading months, "hold what works")
 TREND_SMA_DAYS = 50          # per-asset trend gate; below it, the name is out
 DEFENSIVE_MOM_DAYS = 63      # ~3 months, gates the XLU/XLP defensive sleeve

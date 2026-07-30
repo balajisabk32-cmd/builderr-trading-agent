@@ -34,10 +34,46 @@ against the official scorer: **+0.54% vs the leaderboard's +0.52%, 11/11 trades,
 |---|---|---|---|---|
 | **Diversifier sleeve + group cap** | — | +0.96% (from −3.01%) | — | — |
 | **Equity circuit breaker** | — | vol-spike −11.08% → −4.99% | +15.99% → +17.16% (2y) | — |
-| **Regime filter 100 → 120 days** | +0.54% (unchanged) | +0.96% → **+2.24%** | +4.55% → **+4.91%** | −5.24% → **−4.32%** |
+| **Regime filter 100 → 140 days** | +0.54% (unchanged) | +0.96% → **+3.99%** | +4.55% → **+5.40%** | −5.24% → **−3.13%** |
 
-Baseline the rejections below are measured against: **live +0.54%, samples
-+2.24%, 26y mean CAGR +4.91%, worst era −4.32%.**
+### Walk-forward validation of the regime filter
+The one test the `backtest-expert` methodology prescribes that I initially skipped.
+Length chosen on **training data only**, then measured out-of-sample:
+
+| train period | picks | test period | 140d | 120d |
+|---|---|---|---|---|
+| 2000–2013 | **140d** | 2013–2026 | **+7.86%, DD 17.2%** | +7.43%, DD 18.1% |
+| 2000–2009 | **140d** | 2010–2026 | **+6.49%, DD 17.2%** | +6.20%, DD 18.1% |
+
+Both folds picked 140 without seeing the test data, and 140 won both test periods.
+This **corrected an error**: 120 had been chosen to keep its ±20% band clear of a
+"cliff" at 150 where the three sample windows collapse to +0.99%. Across 26 years
+150 gives +4.91% and 160 +4.77% — a gentle decline, not a cliff. Weighting the
+weakest dataset above the strongest was the mistake. (130 was not in the
+walk-forward candidate set; it scores between 120 and 140.)
+
+Baseline the rejections below are measured against the 120-day configuration
+(**live +0.54%, samples +2.24%, 26y mean +4.91%, worst era −4.32%**), which the
+shipped 140-day version then improved on. No rejected mechanism came within
+reach of either.
+
+### Trade-level statistics, 2000–2026 (26.5 years)
+| slippage | trades | win rate | avg win | avg loss | maxDD | CAGR |
+|---|---|---|---|---|---|---|
+| **5bps (the competition's actual fill)** | 2890 | 50.9% | 5.68% | 2.02% | 19.1% | **+6.15%** |
+| 10bps (2×) | 2891 | 48.9% | 5.72% | 2.04% | 23.3% | +3.86% |
+| 15bps (3×) | 2901 | 46.8% | 5.80% | 2.05% | 29.2% | +1.74% |
+
+Profit factor 2.91, expectancy +1.90%/trade. Scored **94/100 — Deploy** by the
+`backtest-expert` framework (Sample Size 20/20, Expectancy 20/20, Risk Management
+19/20, Robustness 15/20, Execution Realism 20/20), with one medium red flag:
+15 tunable parameters carries curve-fitting risk.
+
+**Caveat on the trade count:** each sell is counted, including partial trims, so
+2890 overstates the number of independent round trips. **Caveat on slippage:** the
+strategy is genuinely slippage-sensitive — CAGR more than halves at 2×. This does
+not affect Round 2 (the engine fixes equity slippage at 5bps, verified in
+`fairness_tests.py`) but it would matter for live deployment at size.
 
 ---
 
